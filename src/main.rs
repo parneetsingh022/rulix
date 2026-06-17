@@ -1,14 +1,16 @@
+mod cli;
 mod config;
 mod errors;
 
 use anyhow::Result;
+use clap::Parser;
 use config::RulixConfig;
 
-fn main() -> Result<()> {
-    let config_path = "local/config.yaml";
+use cli::Cli;
 
-    let config = RulixConfig::from_file(config_path)?;
-    println!("{:#?}", config);
+fn main() -> Result<()> {
+    let args = Cli::parse();
+    args.run()?;
 
     Ok(())
 }

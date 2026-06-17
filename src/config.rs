@@ -33,6 +33,11 @@ impl RulixConfig {
 
         Ok(config)
     }
+
+    /// Returns total number of rules.
+    pub fn len(&self) -> usize {
+        self.rules.len()
+    }
 }
 
 #[cfg(test)]
