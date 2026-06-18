@@ -99,9 +99,23 @@ mod tests {
         fs::write(
             &path,
             indoc! {r#"
-                rules:
-                - name: "Rule 1"
-                - name: "Rule 2"
+            rules:
+              - name: "organize-desktop"
+                target: "C:\\Users\\Parneet\\Desktop\\"
+                steps:
+                  - match:
+                      ext: "pdf" # extension
+                  - move_to: "C:\\Users\\Documents\\PDFs\\"
+                  - notify: "Large PDF moved successfully"
+            
+              - name: "clean-downloads"
+                target: "C:\\Users\\Parneet\\Downloads\\"
+                steps:
+                  - match:
+                      ext: "exe"
+                  - move_to: "C:\\Users\\Parneet\\Downloads\\Executables"
+                  - notify: "Moved exe files to Executables folder"
+
             "#},
         )
         .unwrap();
@@ -109,7 +123,11 @@ mod tests {
         let config = RulixRules::from_file(&path).unwrap();
 
         assert_eq!(config.rules.len(), 2);
-        assert_eq!(config.rules[0].name, "Rule 1");
+        assert_eq!(config.rules[0].name, "organize-desktop");
+        assert_eq!(config.rules[0].target, "C:\\Users\\Parneet\\Desktop\\");
+
+        assert_eq!(config.rules[1].name, "clean-downloads");
+        assert_eq!(config.rules[1].target, "C:\\Users\\Parneet\\Downloads\\");
     }
 
     #[test]

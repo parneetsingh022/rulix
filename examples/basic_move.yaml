@@ -3,6 +3,6 @@ rules:
     target: "C:\\Users\\Username\\Desktop"
     steps:
       - match:
-          ext: ".pdf" # extension
+          ext: "pdf" # extension
       - move_to: "C:\\Users\\Documents\\PDFs\\"
       - notify: "Large PDF moved successfully"
