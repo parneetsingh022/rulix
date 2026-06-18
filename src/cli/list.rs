@@ -1,6 +1,6 @@
 //! This module implements the logic behind the `rulix --list` command.
 //!
-//! The command reads all rule definitions from the user's `config.yaml`
+//! The command reads all rule definitions from the user's `rules.yaml`
 //! configuration file and displays them in a human-readable format.
 //!
 //! Each configured rule is loaded and rendered in a structured layout,
@@ -12,36 +12,56 @@
 //! verify that the configuration has been loaded as expected, without
 //! requiring users to manually inspect the configuration file.
 
-use crate::RulixConfig;
-use anyhow::Result;
-use std::borrow::Cow;
-use std::path::Path;
 
-/// Displays all rules defined in the provided configuration file.
+use anyhow::Result;
+
+use std::{
+    borrow::Cow,
+    io::ErrorKind
+};
+
+
+use crate::rules::{RulesSource, RulixRules};
+
+/// Displays all rules defined in the provided rules file.
 ///
-/// The configuration is loaded from `config`, after which a summary of the
+/// The rules are loaded from `rules`, after which a summary of the
 /// loaded rule set is printed to standard output.
 ///
 /// # Errors
 ///
 /// Returns an error if the configuration file cannot be read, parsed, or
 /// validated.
-pub fn run(config: impl AsRef<Path>) -> Result<()> {
-    let config_path = config.as_ref();
-    let config = RulixConfig::from_file(config_path)?;
+pub fn run(source: RulesSource) -> Result<()> {
+    let rules_path = source.path();
+
+    let rules = match RulixRules::from_file(rules_path) {
+        Ok(rules) => rules,
+        Err(err) => {
+            match err.downcast_ref::<std::io::Error>(){
+                Some(io_err) if io_err.kind() == ErrorKind::NotFound => {
+                    println!("No rules to show.");
+                    return Ok(());
+                }
+                _ => return Err(err),
+            }
+        }
+    };
+
+    
 
     let space = "    ";
     let max_name_length = 30;
 
     println!("Rulix Configuration");
 
-    println!("{space}Config: {}", config_path.display());
-    println!("{space}Rules: {}", config.len());
+    println!("{space}File: {}", rules_path.display());
+    println!("{space}Rules: {}", rules.len());
     println!();
 
     println!("Available Rules");
 
-    for (i, rule) in config.rules.iter().enumerate() {
+    for (i, rule) in rules.rules.iter().enumerate() {
         println!(
             "{space}[{i}] {name:<name_width$}",
             name = truncate_with_ellipsis(&rule.name, max_name_length),

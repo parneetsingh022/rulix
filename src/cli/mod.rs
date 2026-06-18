@@ -1,9 +1,12 @@
 mod list;
 
-use std::path::PathBuf;
+use std::{
+    path::{PathBuf},
+};
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use crate::rules::{default_rules_file, RulesSource};
 
 #[derive(Parser, Debug)]
 #[command(version, about)]
@@ -12,8 +15,8 @@ pub struct Cli {
     command: Commands,
 
     /// Path to the config file.
-    #[arg(short, long, default_value = "local/config.yaml")]
-    config: PathBuf,
+    #[arg(short, long, global=true)]
+    rules: Option<PathBuf>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -24,8 +27,15 @@ pub enum Commands {
 
 impl Cli {
     pub fn run(&self) -> Result<()> {
-        match self.command {
-            Commands::List => list::run(&self.config)?,
+        match &self.command {
+            Commands::List => {
+                let rules_path = match &self.rules {
+                    Some(path) => RulesSource::User(path.clone()),
+                    None => RulesSource::Default(default_rules_file()),
+                };
+
+                list::run(rules_path)?
+            },
         }
 
         Ok(())

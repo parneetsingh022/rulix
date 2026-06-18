@@ -1,10 +1,10 @@
 mod cli;
 mod config;
+mod rules;
 mod errors;
 
 use anyhow::Result;
 use clap::Parser;
-use config::RulixConfig;
 
 use cli::Cli;
 
