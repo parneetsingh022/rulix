@@ -16,8 +16,8 @@ use anyhow::Result;
 
 use std::borrow::Cow;
 
-use crate::rules::{RulesSource, RulixRules};
 use crate::errors::FileError;
+use crate::rules::{RulesSource, RulixRules};
 
 /// Displays all rules defined in the provided rules file.
 ///
@@ -42,14 +42,17 @@ pub fn run(source: RulesSource) -> Result<()> {
         // expected to exist and a missing file should be reported as an error.
         Err(FileError::NotFound(_)) if !source.is_user_provided() => {
             println!("No rules to show.");
-            return Ok(())
-        },
+            return Ok(());
+        }
 
-        Err(err) => return Err(err.into())
+        Err(err) => return Err(err.into()),
     };
 
     let space = "    ";
     let max_name_length = 30;
+
+    let index_width = rules.rules.len().to_string().len().max(2);
+
 
     println!("Rulix Configuration");
 
@@ -57,11 +60,29 @@ pub fn run(source: RulesSource) -> Result<()> {
     println!("{space}Rules: {}", rules.len());
     println!();
 
-    println!("Available Rules");
+    
+    println!("Available Rules\n");
 
+    // Print Minimalist Header (using uppercase and spacing for structure)
+    println!(
+        "{space}{id_hdr:>i_width$}   {name_hdr:<name_width$}",
+        space = space,
+        id_hdr = "ID",
+        i_width = index_width,
+        name_hdr = "RULE NAME",
+        name_width = max_name_length
+    );
+
+    // A simple empty line or a very subtle row gap creates the separation
+    println!(); 
+
+    // Print Rows
     for (i, rule) in rules.rules.iter().enumerate() {
         println!(
-            "{space}[{i}] {name:<name_width$}",
+            "{space}{i:>i_width$}   {name:<name_width$}",
+            space = space,
+            i = i,
+            i_width = index_width,
             name = truncate_with_ellipsis(&rule.name, max_name_length),
             name_width = max_name_length
         );
@@ -129,7 +150,7 @@ mod tests {
     #[test]
     fn test_utf8_boundary_truncation() {
         // "🦀" is 4 bytes. "🦀🦀" is 8 bytes.
-        let crabs = "🦀🦀"; 
+        let crabs = "🦀🦀";
 
         // Limit 7: Cannot fit second crab. Floors to 1st crab (4 bytes) + "..." (3 bytes) = 7 bytes.
         let res = truncate_with_ellipsis(crabs, 7);
@@ -155,17 +176,17 @@ mod tests {
         let res_2 = truncate_with_ellipsis(s, 2);
         assert_eq!(res_2, "..");
         assert!(matches!(res_2, Cow::Owned(_)));
-        
+
         // max_bytes = 0: returns empty string slice, zero allocations!
         let res_0 = truncate_with_ellipsis(s, 0);
         assert_eq!(res_0, "");
-        assert!(matches!(res_0, Cow::Borrowed(_))); 
+        assert!(matches!(res_0, Cow::Borrowed(_)));
     }
 
     #[test]
     fn test_empty_string() {
         let s = "";
-        
+
         // Empty string always fits, should be Borrowed
         let res = truncate_with_ellipsis(s, 5);
         assert_eq!(res, "");

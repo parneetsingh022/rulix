@@ -70,7 +70,7 @@ impl RulixRules {
             Err(e) => return Err(e.into()),
         };
 
-        Ok(serde_yaml::from_reader(file).map_err(FileError::InvalidYaml)?)
+        serde_yaml::from_reader(file).map_err(FileError::InvalidYaml)
     }
 
     /// Returns total number of rules.
