@@ -36,7 +36,7 @@ pub enum Step {
 /// Rule filters used to evaluate whether a file matches a given `Step::Match`.
 #[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct MatchCriteria {
-    /// The target file extension (e.g., `".pdf"`, `".docx"`).
+    /// The target file extension (e.g., `"pdf"`, `"docx"`).
     pub ext: String,
 }
 
