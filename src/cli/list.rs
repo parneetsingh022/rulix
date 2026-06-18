@@ -83,7 +83,9 @@ fn truncate_with_ellipsis(s: &str, max_bytes: usize) -> Cow<'_, str> {
     if s.len() <= max_bytes {
         return Cow::Borrowed(s);
     }
-
+    if max_bytes == 0 {
+        return Cow::Borrowed(""); // No allocation for 0 bytes!
+    }
     if max_bytes <= 3 {
         return Cow::Owned(".".repeat(max_bytes));
     }
@@ -94,4 +96,83 @@ fn truncate_with_ellipsis(s: &str, max_bytes: usize) -> Cow<'_, str> {
     out.push_str(&s[..cutoff]);
     out.push_str("...");
     Cow::Owned(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::borrow::Cow;
+
+    #[test]
+    fn test_no_truncation_needed() {
+        // Fits perfectly, should be Borrowed
+        let s = "hello";
+        let res = truncate_with_ellipsis(s, 5);
+        assert_eq!(res, "hello");
+        assert!(matches!(res, Cow::Borrowed(_)));
+
+        // Well under the limit, should be Borrowed
+        let res_short = truncate_with_ellipsis(s, 10);
+        assert_eq!(res_short, "hello");
+        assert!(matches!(res_short, Cow::Borrowed(_)));
+    }
+
+    #[test]
+    fn test_basic_truncation() {
+        // Needs truncation, fits exactly after accounting for "..."
+        let s = "hello world"; // 11 bytes
+        let res = truncate_with_ellipsis(s, 8); // 5 bytes ("hello") + 3 bytes ("...")
+        assert_eq!(res, "hello...");
+        assert!(matches!(res, Cow::Owned(_)));
+    }
+
+    #[test]
+    fn test_utf8_boundary_truncation() {
+        // "🦀" is 4 bytes. "🦀🦀" is 8 bytes.
+        let crabs = "🦀🦀"; 
+
+        // Limit 7: Cannot fit second crab. Floors to 1st crab (4 bytes) + "..." (3 bytes) = 7 bytes.
+        let res = truncate_with_ellipsis(crabs, 7);
+        assert_eq!(res, "🦀...");
+        assert!(matches!(res, Cow::Owned(_)));
+
+        // Limit 6: Cannot fit the first crab + "...". Floors to 0 bytes + "..." = 3 bytes.
+        let res_tight = truncate_with_ellipsis(crabs, 6);
+        assert_eq!(res_tight, "...");
+        assert!(matches!(res_tight, Cow::Owned(_)));
+    }
+
+    #[test]
+    fn test_edge_case_small_max_bytes() {
+        let s = "heavy rotation";
+
+        // max_bytes = 3: exactly fits "..."
+        let res_3 = truncate_with_ellipsis(s, 3);
+        assert_eq!(res_3, "...");
+        assert!(matches!(res_3, Cow::Owned(_)));
+
+        // max_bytes = 2: returns ".."
+        let res_2 = truncate_with_ellipsis(s, 2);
+        assert_eq!(res_2, "..");
+        assert!(matches!(res_2, Cow::Owned(_)));
+        
+        // max_bytes = 0: returns empty string slice, zero allocations!
+        let res_0 = truncate_with_ellipsis(s, 0);
+        assert_eq!(res_0, "");
+        assert!(matches!(res_0, Cow::Borrowed(_))); 
+    }
+
+    #[test]
+    fn test_empty_string() {
+        let s = "";
+        
+        // Empty string always fits, should be Borrowed
+        let res = truncate_with_ellipsis(s, 5);
+        assert_eq!(res, "");
+        assert!(matches!(res, Cow::Borrowed(_)));
+
+        let res_zero = truncate_with_ellipsis(s, 0);
+        assert_eq!(res_zero, "");
+        assert!(matches!(res_zero, Cow::Borrowed(_)));
+    }
 }
