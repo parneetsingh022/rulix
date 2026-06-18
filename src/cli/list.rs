@@ -48,7 +48,7 @@ pub fn run(source: RulesSource) -> Result<()> {
         Err(err) => return Err(err.into()),
     };
 
-    let space = "    ";
+    let indent_size = 4;
     let max_name_length = 30;
 
     let index_width = rules.rules.len().to_string().len().max(2);
@@ -56,35 +56,48 @@ pub fn run(source: RulesSource) -> Result<()> {
 
     println!("Rulix Configuration");
 
-    println!("{space}File: {}", rules_path.display());
-    println!("{space}Rules: {}", rules.len());
+    println!(
+        "{space:<indent_width$}File: {path}", 
+        space = "", 
+        indent_width = indent_size, 
+        path = rules_path.display()
+    );
+    println!(
+        "{space:<indent_width$}Rules: {count}", 
+        space = "", 
+        indent_width = indent_size, 
+        count = rules.len()
+    );
+
     println!();
 
     
     println!("Available Rules\n");
 
-    // Print Minimalist Header (using uppercase and spacing for structure)
     println!(
-        "{space}{id_hdr:>i_width$}   {name_hdr:<name_width$}",
-        space = space,
+        "{space:<indent_width$}{id_hdr:>i_width$}   {name_hdr:<name_width$}   {target_hdr}",
+        space = "",
+        indent_width = indent_size,
         id_hdr = "ID",
         i_width = index_width,
         name_hdr = "RULE NAME",
-        name_width = max_name_length
+        name_width = max_name_length,
+        target_hdr = "TARGET DIR"
     );
 
-    // A simple empty line or a very subtle row gap creates the separation
     println!(); 
 
     // Print Rows
     for (i, rule) in rules.rules.iter().enumerate() {
         println!(
-            "{space}{i:>i_width$}   {name:<name_width$}",
-            space = space,
-            i = i,
+            "{space:<indent_width$}{id:>i_width$}   {name:<name_width$}   {target_hdr}",
+            space = "",
+            indent_width = indent_size,
+            id = i,
             i_width = index_width,
             name = truncate_with_ellipsis(&rule.name, max_name_length),
-            name_width = max_name_length
+            name_width = max_name_length,
+            target_hdr = &rule.target
         );
     }
 

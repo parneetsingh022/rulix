@@ -4,6 +4,7 @@ use std::{fs::File, io::ErrorKind, path::Path};
 
 use crate::config::SYSTEM_CONFIG_DIR;
 use crate::errors::FileError;
+use crate::steps::Steps;
 
 /// Returns the path to the default rules configuration file.
 ///
@@ -49,11 +50,15 @@ impl RulesSource {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub struct Rule {
     pub name: String,
+    pub target: String,
+    pub steps: Vec<Steps>
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub struct RulixRules {
     pub rules: Vec<Rule>,
 }
