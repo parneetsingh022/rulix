@@ -1,10 +1,11 @@
 use serde::Deserialize;
 use std::path::PathBuf;
-use std::{fs::File, io::ErrorKind, path::Path};
+use std::{fs::File, io::ErrorKind, path::Path, collections::VecDeque};
+
 
 use crate::config::SYSTEM_CONFIG_DIR;
 use crate::errors::FileError;
-use crate::steps::Steps;
+use crate::steps::Step;
 
 /// Returns the path to the default rules configuration file.
 ///
@@ -54,7 +55,14 @@ impl RulesSource {
 pub struct Rule {
     pub name: String,
     pub target: String,
-    pub steps: Vec<Steps>
+    pub steps: VecDeque<Step>,
+}
+
+impl Rule {
+    // Returns an iterator over references to the steps
+    pub fn pop_next_step(&mut self) -> Option<Step> {
+        self.steps.pop_front()
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -90,6 +98,7 @@ mod tests {
     use indoc::indoc;
     use std::fs;
     use tempfile::tempdir;
+    use crate::steps::Step;
 
     #[test]
     fn loads_valid_config() {
@@ -120,14 +129,20 @@ mod tests {
         )
         .unwrap();
 
-        let config = RulixRules::from_file(&path).unwrap();
+        let mut config = RulixRules::from_file(&path).unwrap();
 
         assert_eq!(config.rules.len(), 2);
         assert_eq!(config.rules[0].name, "organize-desktop");
         assert_eq!(config.rules[0].target, "C:\\Users\\Parneet\\Desktop\\");
+        assert_eq!(config.rules[0].pop_next_step(), Some(Step::new_match("pdf")));
+        assert_eq!(config.rules[0].pop_next_step(), Some(Step::new_move_to("C:\\Users\\Documents\\PDFs\\")));
+        assert_eq!(config.rules[0].pop_next_step(), Some(Step::new_notify("Large PDF moved successfully")));
 
         assert_eq!(config.rules[1].name, "clean-downloads");
         assert_eq!(config.rules[1].target, "C:\\Users\\Parneet\\Downloads\\");
+        assert_eq!(config.rules[1].pop_next_step(), Some(Step::new_match("exe")));
+        assert_eq!(config.rules[1].pop_next_step(), Some(Step::new_move_to("C:\\Users\\Parneet\\Downloads\\Executables")));
+        assert_eq!(config.rules[1].pop_next_step(), Some(Step::new_notify("Moved exe files to Executables folder")));
     }
 
     #[test]
