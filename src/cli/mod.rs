@@ -1,12 +1,10 @@
 mod list;
 
-use std::{
-    path::{PathBuf},
-};
+use std::path::PathBuf;
 
+use crate::rules::{RulesSource, default_rules_file};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use crate::rules::{default_rules_file, RulesSource};
 
 #[derive(Parser, Debug)]
 #[command(version, about)]
@@ -15,7 +13,7 @@ pub struct Cli {
     command: Commands,
 
     /// Path to the config file.
-    #[arg(short, long, global=true)]
+    #[arg(short, long, global = true)]
     rules: Option<PathBuf>,
 }
 
@@ -35,7 +33,7 @@ impl Cli {
                 };
 
                 list::run(rules_path)?
-            },
+            }
         }
 
         Ok(())

@@ -1,14 +1,9 @@
-use anyhow::Result;
 use serde::Deserialize;
 use std::path::PathBuf;
-use  std::{
-    fs::File,
-    io::ErrorKind,
-    path::Path,
-};
+use std::{fs::File, io::ErrorKind, path::Path};
 
-use crate::errors::ConfigError;
 use crate::config::SYSTEM_CONFIG_DIR;
+use crate::errors::FileError;
 
 /// Returns the path to the default rules configuration file.
 ///
@@ -53,8 +48,6 @@ impl RulesSource {
     }
 }
 
-
-
 #[derive(Debug, Deserialize)]
 pub struct Rule {
     pub name: String,
@@ -66,21 +59,18 @@ pub struct RulixRules {
 }
 
 impl RulixRules {
-    pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
+    pub fn from_file(path: impl AsRef<Path>) -> Result<Self, FileError> {
         let path = path.as_ref();
 
         let file = match File::open(path) {
             Ok(file) => file,
             Err(e) if e.kind() == ErrorKind::NotFound => {
-                return Err(ConfigError::NotFound(path.display().to_string()).into());
+                return Err(FileError::NotFound(path.display().to_string()));
             }
             Err(e) => return Err(e.into()),
         };
 
-        // Syntax error while parsing yaml file
-        let config = serde_yaml::from_reader(file).map_err(ConfigError::InvalidYaml)?;
-
-        Ok(config)
+        Ok(serde_yaml::from_reader(file).map_err(FileError::InvalidYaml)?)
     }
 
     /// Returns total number of rules.
@@ -88,9 +78,6 @@ impl RulixRules {
         self.rules.len()
     }
 }
-
-
-
 
 #[cfg(test)]
 mod tests {
@@ -127,7 +114,7 @@ mod tests {
 
         let err = RulixRules::from_file(&path).unwrap_err();
 
-        assert!(err.downcast_ref::<ConfigError>().is_some());
+        assert!(matches!(err, FileError::NotFound(_)));
     }
 
     #[test]
@@ -146,8 +133,6 @@ mod tests {
 
         let err = RulixRules::from_file(&path).unwrap_err();
 
-        let config_err = err.downcast_ref::<ConfigError>().unwrap();
-
-        assert!(matches!(config_err, ConfigError::InvalidYaml(_)));
+        assert!(matches!(err, FileError::InvalidYaml(_)));
     }
 }

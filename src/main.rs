@@ -1,7 +1,7 @@
 mod cli;
 mod config;
-mod rules;
 mod errors;
+mod rules;
 
 use anyhow::Result;
 use clap::Parser;

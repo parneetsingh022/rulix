@@ -12,16 +12,12 @@
 //! verify that the configuration has been loaded as expected, without
 //! requiring users to manually inspect the configuration file.
 
-
 use anyhow::Result;
 
-use std::{
-    borrow::Cow,
-    io::ErrorKind
-};
-
+use std::borrow::Cow;
 
 use crate::rules::{RulesSource, RulixRules};
+use crate::errors::FileError;
 
 /// Displays all rules defined in the provided rules file.
 ///
@@ -37,18 +33,20 @@ pub fn run(source: RulesSource) -> Result<()> {
 
     let rules = match RulixRules::from_file(rules_path) {
         Ok(rules) => rules,
-        Err(err) => {
-            match err.downcast_ref::<std::io::Error>(){
-                Some(io_err) if io_err.kind() == ErrorKind::NotFound => {
-                    println!("No rules to show.");
-                    return Ok(());
-                }
-                _ => return Err(err),
-            }
-        }
-    };
 
-    
+        // When `--rules` is not provided, Rulix falls back to its default rules file.
+        // That file may not exist yet, especially on first startup, so a missing
+        // default rules file is not treated as an error.
+        //
+        // If the user explicitly provides a path with `--rules`, then that file is
+        // expected to exist and a missing file should be reported as an error.
+        Err(FileError::NotFound(_)) if !source.is_user_provided() => {
+            println!("No rules to show.");
+            return Ok(())
+        },
+
+        Err(err) => return Err(err.into())
+    };
 
     let space = "    ";
     let max_name_length = 30;
@@ -71,7 +69,6 @@ pub fn run(source: RulesSource) -> Result<()> {
 
     Ok(())
 }
-
 
 /// Truncates a UTF-8 string to at most `max_bytes` bytes and appends `...`
 /// when truncation occurs.
