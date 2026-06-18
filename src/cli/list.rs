@@ -17,32 +17,6 @@ use anyhow::Result;
 use std::borrow::Cow;
 use std::path::Path;
 
-/// Truncates a UTF-8 string to at most `max_bytes` bytes and appends `...`
-/// when truncation occurs.
-///
-/// The returned string is guaranteed to end on a valid UTF-8 character boundary.
-/// If `s` already fits within `max_bytes`, this returns a borrowed `&str`
-/// without allocating. If truncation is needed, it returns an owned `String`.
-///
-/// The `max_bytes` value includes the ellipsis. For example, with
-/// `max_bytes = 10`, the result may contain up to 7 bytes from `s` plus `...`.
-fn truncate_with_ellipsis(s: &str, max_bytes: usize) -> Cow<'_, str> {
-    if s.len() <= max_bytes {
-        return Cow::Borrowed(s);
-    }
-
-    if max_bytes <= 3 {
-        return Cow::Owned(".".repeat(max_bytes));
-    }
-
-    let cutoff = s.floor_char_boundary(max_bytes - 3);
-
-    let mut out = String::with_capacity(cutoff + 3);
-    out.push_str(&s[..cutoff]);
-    out.push_str("...");
-    Cow::Owned(out)
-}
-
 /// Displays all rules defined in the provided configuration file.
 ///
 /// The configuration is loaded from `config`, after which a summary of the
@@ -76,4 +50,31 @@ pub fn run(config: impl AsRef<Path>) -> Result<()> {
     }
 
     Ok(())
+}
+
+
+/// Truncates a UTF-8 string to at most `max_bytes` bytes and appends `...`
+/// when truncation occurs.
+///
+/// The returned string is guaranteed to end on a valid UTF-8 character boundary.
+/// If `s` already fits within `max_bytes`, this returns a borrowed `&str`
+/// without allocating. If truncation is needed, it returns an owned `String`.
+///
+/// The `max_bytes` value includes the ellipsis. For example, with
+/// `max_bytes = 10`, the result may contain up to 7 bytes from `s` plus `...`.
+fn truncate_with_ellipsis(s: &str, max_bytes: usize) -> Cow<'_, str> {
+    if s.len() <= max_bytes {
+        return Cow::Borrowed(s);
+    }
+
+    if max_bytes <= 3 {
+        return Cow::Owned(".".repeat(max_bytes));
+    }
+
+    let cutoff = s.floor_char_boundary(max_bytes - 3);
+
+    let mut out = String::with_capacity(cutoff + 3);
+    out.push_str(&s[..cutoff]);
+    out.push_str("...");
+    Cow::Owned(out)
 }
