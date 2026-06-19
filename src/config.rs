@@ -1,5 +1,10 @@
 use std::{env, path::PathBuf, sync::LazyLock};
 
+
+/// System-wide configuration directory used by Rulix.
+///
+/// Windows: %ProgramData%\.rulix
+/// Unix-like: /etc/.rulix
 pub static SYSTEM_CONFIG_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     let extension = ".rulix";
 
