@@ -12,7 +12,6 @@
 
 use serde::Deserialize;
 use std::{
-    collections::VecDeque,
     fs::File,
     io::ErrorKind,
     path::{Path, PathBuf},
