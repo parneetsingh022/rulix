@@ -119,6 +119,29 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
+    fn default_rules_file_returns_rules_yaml_inside_system_config_dir() {
+        let path = default_rules_file();
+
+        assert_eq!(path.file_name().unwrap(), "rules.yaml");
+
+        #[cfg(target_os = "windows")]
+        assert_eq!(
+            path,
+            PathBuf::from("C:\\ProgramData")
+                .join(".rulix")
+                .join("rules.yaml")
+        );
+
+        #[cfg(not(target_os = "windows"))]
+        assert_eq!(
+            path,
+            PathBuf::from("/etc")
+                .join(".rulix")
+                .join("rules.yaml")
+        );
+    }
+
+    #[test]
     fn loads_valid_config() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("config.yaml");
