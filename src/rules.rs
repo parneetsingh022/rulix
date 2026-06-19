@@ -67,12 +67,14 @@ impl RulesFileSource {
 /// A single rule definition loaded from a rules file.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[allow(dead_code)]
 pub struct Rule {
     pub name: String,
     pub target: PathBuf,
     pub steps: Vec<Step>,
 }
 
+#[allow(dead_code)]
 impl Rule {
     /// Returns steps in execution order.
     pub fn steps(&self) -> impl Iterator<Item = &Step> {

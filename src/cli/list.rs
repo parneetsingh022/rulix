@@ -73,14 +73,13 @@ pub fn run(source: RulesFileSource) -> Result<()> {
     println!("Available Rules\n");
 
     println!(
-        "{space:<indent_width$}{id_hdr:>i_width$}   {name_hdr:<name_width$}   {target_hdr}",
+        "{space:<indent_width$}{id_hdr:>i_width$}   {name_hdr:<name_width$}   TARGET DIR",
         space = "",
         indent_width = indent_size,
         id_hdr = "ID",
         i_width = index_width,
         name_hdr = "RULE NAME",
         name_width = max_name_length,
-        target_hdr = "TARGET DIR"
     );
 
     println!();
