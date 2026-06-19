@@ -1,0 +1,48 @@
+#[cfg(test)]
+mod tests {
+    use assert_cmd::Command;
+
+    // #[test]
+    // fn help_prints_usage() {
+    //     let mut cmd = Command::cargo_bin("rulix").unwrap();
+
+    //     cmd.arg("--help")
+    //         .assert()
+    //         .success()
+    //         .stdout(predicates::str::contains("Usage"));
+    // }
+
+    #[test]
+    fn list_succeeds_when_default_config_is_missing() {
+        let mut cmd = Command::cargo_bin("rulix").unwrap();
+
+        cmd.arg("list")
+            .assert()
+            .success()
+            .stdout(predicates::str::contains("No rules to show."));
+    }
+
+    #[test]
+    fn list_returns_error_when_user_provided_config_file_does_not_exist() {
+        let mut cmd = Command::cargo_bin("rulix").unwrap();
+
+        cmd.args(["list", "--rules", "rule_file.yaml"])
+            .assert()
+            .failure()
+            .stderr(predicates::str::contains(
+                "config file not found: rule_file.yaml",
+            ));
+    }
+
+    #[test]
+    fn list_returns_error_when_user_provided_config_file_does_not_exist_with_list() {
+        let mut cmd = Command::cargo_bin("rulix").unwrap();
+
+        cmd.args(["list", "--rules", "rule_file.yaml"])
+            .assert()
+            .failure()
+            .stderr(predicates::str::contains(
+                "config file not found: rule_file.yaml",
+            ));
+    }
+}
