@@ -17,7 +17,7 @@ use anyhow::Result;
 use std::borrow::Cow;
 
 use crate::errors::FileError;
-use crate::rules::{RuleSet, RulesFileSource};
+use crate::rules::{RulesFileSource, RuleSet};
 
 /// Displays all rules defined in the provided rules file.
 ///
