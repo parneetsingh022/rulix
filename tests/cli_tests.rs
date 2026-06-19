@@ -2,15 +2,15 @@
 mod tests {
     use assert_cmd::Command;
 
-    // #[test]
-    // fn help_prints_usage() {
-    //     let mut cmd = Command::cargo_bin("rulix").unwrap();
+    #[test]
+    fn help_prints_usage() {
+        let mut cmd = Command::cargo_bin("rulix").unwrap();
 
-    //     cmd.arg("--help")
-    //         .assert()
-    //         .success()
-    //         .stdout(predicates::str::contains("Usage"));
-    // }
+        cmd.arg("--help")
+            .assert()
+            .success()
+            .stdout(predicates::str::contains("Usage"));
+    }
 
     #[test]
     fn list_succeeds_when_default_config_is_missing() {
