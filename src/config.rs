@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf, sync::LazyLock};
+use std::{path::PathBuf, sync::LazyLock};
 
 /// System-wide configuration directory used by Rulix.
 ///
@@ -9,7 +9,7 @@ pub static SYSTEM_CONFIG_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
 
     #[cfg(target_os = "windows")]
     {
-        let base = env::var("ProgramData")
+        let base = std::env::var("ProgramData")
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from("C:\\ProgramData"));
 
