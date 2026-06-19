@@ -1,17 +1,22 @@
-//! Configuration parsing and types for Rulix workflows.
+//! Workflow configuration types.
 //!
-//! This module handles the deserialization of sequential engine tasks (steps)
-//! from your YAML rules file. It provides an extensible, untagged pipeline architecture 
-//! allowing actions like file matching, moving, and system notifications to be executed 
-//! in top-to-bottom sequence.
+//! Defines the structures used to deserialize the `steps` section of a Rulix
+//! rule file. Each YAML step maps to a [`Step`] variant, which represents a
+//! single action in the rule execution pipeline.
+//!
+//! Steps are executed sequentially in the order they appear in the
+//! configuration file. Each step represents a discrete operation within
+//! the workflow pipeline.
+//!
+//! This module serves as the configuration layer between YAML rule files and
+//! the runtime execution engine.
 
 use serde::Deserialize;
 
-// =========================================================================
-// Core Domain Types
-// =========================================================================
-
-/// Represents a single sequential action executable by the Rulix engine.
+/// Defines a single operation within a rule's workflow pipeline.
+///
+/// Each step is deserialized from YAML and executed sequentially by
+/// the engine as part of rule processing.
 #[derive(Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
@@ -40,10 +45,16 @@ pub struct MatchCriteria {
     pub ext: String,
 }
 
-// =========================================================================
-// Test Helper Implementations
-// =========================================================================
-
+/// Factory constructors for cleanly instantiating specific `Step` variants.
+///
+/// These helpers provide a higher-level API to build individual steps without having to 
+/// manually construct the raw, underlying struct or enum variants throughout the codebase.
+///
+/// # Scope & Future Evolution
+/// * **Current Status:** Restricted to `#[cfg(test)]` because these are currently only needed 
+///   within the test suite to simplify test setup.
+/// * **Future Roadmap:** This implementation block may be exposed outside of tests (`#[cfg(test)]` removed) 
+/// in a future iteration when rule building via the CLI interface is implemented.
 #[cfg(test)]
 impl Step {
     /// Helper factory to cleanly construct a `Step::Match` variant in unit tests.
