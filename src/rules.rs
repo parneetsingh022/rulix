@@ -1,3 +1,15 @@
+//! Rule file loading and configuration types.
+//!
+//! Defines the data structures used to deserialize `rules.yaml` and provides
+//! helpers for loading rule files from disk.
+//!
+//! Each rule describes a target directory and an ordered workflow of
+//! [`Step`]s that are executed when matching files are processed by the
+//! Rulix engine.
+//!
+//! This module acts as the bridge between YAML rule files and the runtime
+//! rule execution system.
+
 use serde::Deserialize;
 use std::path::PathBuf;
 use std::{collections::VecDeque, fs::File, io::ErrorKind, path::Path};
@@ -29,7 +41,7 @@ pub fn default_rules_file() -> PathBuf {
 ///   configured).
 ///
 /// - [`RulesSource::User`] represents a path explicitly provided by the
-///   user, such as via a command-line argument. If the file does not
+///   user, such as via a command-line argument, i.e. `--rules <filename>`. If the file does not
 ///   exist, commands should generally treat this as an error and report
 ///   the missing path to the user.
 pub enum RulesSource {
@@ -49,11 +61,13 @@ impl RulesSource {
     }
 }
 
+
+/// A single rule definition loaded from a rules file.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct Rule {
     pub name: String,
-    pub target: String,
+    pub target: PathBuf,
     pub steps: VecDeque<Step>,
 }
 
@@ -64,6 +78,8 @@ impl Rule {
     }
 }
 
+
+/// Collection of all rules defined in a configuration file.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct RulixRules {
@@ -132,7 +148,7 @@ mod tests {
 
         assert_eq!(config.rules.len(), 2);
         assert_eq!(config.rules[0].name, "organize-desktop");
-        assert_eq!(config.rules[0].target, "C:\\Users\\Parneet\\Desktop\\");
+        assert_eq!(config.rules[0].target.to_string_lossy(), "C:\\Users\\Parneet\\Desktop\\");
         assert_eq!(
             config.rules[0].pop_next_step(),
             Some(Step::new_match("pdf"))
@@ -147,7 +163,7 @@ mod tests {
         );
 
         assert_eq!(config.rules[1].name, "clean-downloads");
-        assert_eq!(config.rules[1].target, "C:\\Users\\Parneet\\Downloads\\");
+        assert_eq!(config.rules[1].target.to_string_lossy(), "C:\\Users\\Parneet\\Downloads\\");
         assert_eq!(
             config.rules[1].pop_next_step(),
             Some(Step::new_match("exe"))

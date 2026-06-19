@@ -95,7 +95,7 @@ pub fn run(source: RulesSource) -> Result<()> {
             i_width = index_width,
             name = truncate_with_ellipsis(&rule.name, max_name_length),
             name_width = max_name_length,
-            target_hdr = &rule.target
+            target_hdr = rule.target.display()
         );
     }
 
