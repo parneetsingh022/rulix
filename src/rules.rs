@@ -11,12 +11,17 @@
 //! rule execution system.
 
 use serde::Deserialize;
-use std::path::PathBuf;
-use std::{collections::VecDeque, fs::File, io::ErrorKind, path::Path};
+use std::{
+    collections::VecDeque,
+    fs::File,
+    io::ErrorKind,
+    path::{Path, PathBuf},
+};
 
 use crate::config::SYSTEM_CONFIG_DIR;
 use crate::errors::FileError;
 use crate::steps::Step;
+
 
 /// Returns the path to the default rules configuration file.
 ///
@@ -35,29 +40,29 @@ pub fn default_rules_file() -> PathBuf {
 /// This distinction is used to determine how missing files should be
 /// handled.
 ///
-/// - [`RulesSource::Default`] represents the default rules file location
+/// - [`RulesFileSource::Default`] represents the default rules file location
 ///   chosen by Rulix. If the file does not exist, commands may treat this
 ///   as a valid state (for example, by reporting that no rules are
 ///   configured).
 ///
-/// - [`RulesSource::User`] represents a path explicitly provided by the
+/// - [`RulesFileSource::User`] represents a path explicitly provided by the
 ///   user, such as via a command-line argument, i.e. `--rules <filename>`. If the file does not
 ///   exist, commands should generally treat this as an error and report
 ///   the missing path to the user.
-pub enum RulesSource {
+pub enum RulesFileSource {
     Default(PathBuf),
     User(PathBuf),
 }
 
-impl RulesSource {
+impl RulesFileSource {
     pub fn path(&self) -> &Path {
         match self {
-            RulesSource::Default(path) | RulesSource::User(path) => path,
+            RulesFileSource::Default(path) | RulesFileSource::User(path) => path,
         }
     }
 
     pub fn is_user_provided(&self) -> bool {
-        matches!(self, RulesSource::User(_))
+        matches!(self, RulesFileSource::User(_))
     }
 }
 
@@ -82,11 +87,11 @@ impl Rule {
 /// Collection of all rules defined in a configuration file.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub struct RulixRules {
+pub struct RuleSet {
     pub rules: Vec<Rule>,
 }
 
-impl RulixRules {
+impl RuleSet {
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self, FileError> {
         let path = path.as_ref();
 
@@ -144,7 +149,7 @@ mod tests {
         )
         .unwrap();
 
-        let mut config = RulixRules::from_file(&path).unwrap();
+        let mut config = RuleSet::from_file(&path).unwrap();
 
         assert_eq!(config.rules.len(), 2);
         assert_eq!(config.rules[0].name, "organize-desktop");
@@ -185,7 +190,7 @@ mod tests {
         let dir = tempdir().unwrap();
         let path = dir.path().join("missing.yaml");
 
-        let err = RulixRules::from_file(&path).unwrap_err();
+        let err = RuleSet::from_file(&path).unwrap_err();
 
         assert!(matches!(err, FileError::NotFound(_)));
     }
@@ -204,7 +209,7 @@ mod tests {
         )
         .unwrap();
 
-        let err = RulixRules::from_file(&path).unwrap_err();
+        let err = RuleSet::from_file(&path).unwrap_err();
 
         assert!(matches!(err, FileError::InvalidYaml(_)));
     }

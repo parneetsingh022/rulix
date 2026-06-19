@@ -2,7 +2,7 @@ mod list;
 
 use std::path::PathBuf;
 
-use crate::rules::{RulesSource, default_rules_file};
+use crate::rules::{RulesFileSource, default_rules_file};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 
@@ -28,8 +28,8 @@ impl Cli {
         match &self.command {
             Commands::List => {
                 let rules_path = match &self.rules {
-                    Some(path) => RulesSource::User(path.clone()),
-                    None => RulesSource::Default(default_rules_file()),
+                    Some(path) => RulesFileSource::User(path.clone()),
+                    None => RulesFileSource::Default(default_rules_file()),
                 };
 
                 list::run(rules_path)?

@@ -17,7 +17,7 @@ use anyhow::Result;
 use std::borrow::Cow;
 
 use crate::errors::FileError;
-use crate::rules::{RulesSource, RulixRules};
+use crate::rules::{RulesFileSource, RuleSet};
 
 /// Displays all rules defined in the provided rules file.
 ///
@@ -28,10 +28,10 @@ use crate::rules::{RulesSource, RulixRules};
 ///
 /// Returns an error if the configuration file cannot be read, parsed, or
 /// validated.
-pub fn run(source: RulesSource) -> Result<()> {
+pub fn run(source: RulesFileSource) -> Result<()> {
     let rules_path = source.path();
 
-    let rules = match RulixRules::from_file(rules_path) {
+    let rules = match RuleSet::from_file(rules_path) {
         Ok(rules) => rules,
 
         // When `--rules` is not provided, Rulix falls back to its default rules file.
