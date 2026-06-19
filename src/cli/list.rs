@@ -53,25 +53,23 @@ pub fn run(source: RulesSource) -> Result<()> {
 
     let index_width = rules.rules.len().to_string().len().max(2);
 
-
     println!("Rulix Configuration");
 
     println!(
-        "{space:<indent_width$}File: {path}", 
-        space = "", 
-        indent_width = indent_size, 
+        "{space:<indent_width$}File: {path}",
+        space = "",
+        indent_width = indent_size,
         path = rules_path.display()
     );
     println!(
-        "{space:<indent_width$}Rules: {count}", 
-        space = "", 
-        indent_width = indent_size, 
+        "{space:<indent_width$}Rules: {count}",
+        space = "",
+        indent_width = indent_size,
         count = rules.len()
     );
 
     println!();
 
-    
     println!("Available Rules\n");
 
     println!(
@@ -85,7 +83,7 @@ pub fn run(source: RulesSource) -> Result<()> {
         target_hdr = "TARGET DIR"
     );
 
-    println!(); 
+    println!();
 
     // Print Rows
     for (i, rule) in rules.rules.iter().enumerate() {

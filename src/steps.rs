@@ -12,6 +12,7 @@
 //! the runtime execution engine.
 
 use serde::Deserialize;
+use std::path::PathBuf;
 
 /// Defines a single operation within a rule's workflow pipeline.
 ///
@@ -21,21 +22,17 @@ use serde::Deserialize;
 #[serde(rename_all = "snake_case")]
 #[serde(untagged)]
 pub enum Step {
-    /// Filters the engine stream based on file attributes.
+    /// Evaluates whether the current file satisfies the given criteria.
     Match {
         #[serde(rename = "match")]
         criteria: MatchCriteria,
     },
 
     /// Relocates the targeted file to a specified destination directory.
-    MoveTo { 
-        move_to: String 
-    },
+    MoveTo { move_to: PathBuf },
 
-    /// Dispatches a desktop or terminal alert message to the user.
-    Notify { 
-        notify: String 
-    },
+    /// Displays a message on terminal.
+    Notify { notify: String },
 }
 
 /// Rule filters used to evaluate whether a file matches a given `Step::Match`.
@@ -45,19 +42,9 @@ pub struct MatchCriteria {
     pub ext: String,
 }
 
-/// Factory constructors for cleanly instantiating specific `Step` variants.
-///
-/// These helpers provide a higher-level API to build individual steps without having to 
-/// manually construct the raw, underlying struct or enum variants throughout the codebase.
-///
-/// # Scope & Future Evolution
-/// * **Current Status:** Restricted to `#[cfg(test)]` because these are currently only needed 
-///   within the test suite to simplify test setup.
-/// * **Future Roadmap:** This implementation block may be exposed outside of tests (`#[cfg(test)]` removed) 
-/// in a future iteration when rule building via the CLI interface is implemented.
+/// Convenience constructors used by unit tests.
 #[cfg(test)]
 impl Step {
-    /// Helper factory to cleanly construct a `Step::Match` variant in unit tests.
     pub fn new_match(ext: &str) -> Self {
         Self::Match {
             criteria: MatchCriteria {
@@ -66,14 +53,12 @@ impl Step {
         }
     }
 
-    /// Helper factory to cleanly construct a `Step::MoveTo` variant in unit tests.
     pub fn new_move_to(path: &str) -> Self {
         Self::MoveTo {
-            move_to: path.to_string(),
+            move_to: PathBuf::from(path),
         }
     }
 
-    /// Helper factory to cleanly construct a `Step::Notify` variant in unit tests.
     pub fn new_notify(msg: &str) -> Self {
         Self::Notify {
             notify: msg.to_string(),
