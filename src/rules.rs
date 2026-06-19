@@ -205,6 +205,33 @@ mod tests {
     }
 
     #[test]
+    fn rule_set_len_returns_number_of_rules() {
+        let rule_set = RuleSet {
+            rules: vec![
+                Rule {
+                    name: "first".to_string(),
+                    target: PathBuf::from("first.txt"),
+                    steps: vec![],
+                },
+                Rule {
+                    name: "second".to_string(),
+                    target: PathBuf::from("second.txt"),
+                    steps: vec![],
+                },
+            ],
+        };
+
+        assert_eq!(rule_set.len(), 2);
+    }
+
+    #[test]
+    fn rule_set_len_returns_zero_when_no_rules_exist() {
+        let rule_set = RuleSet { rules: vec![] };
+
+        assert_eq!(rule_set.len(), 0);
+    }
+
+    #[test]
     fn loads_valid_config() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("config.yaml");
@@ -235,7 +262,7 @@ mod tests {
 
         let config = RuleSet::from_file(&path).unwrap();
 
-        assert_eq!(config.rules.len(), 2);
+        assert_eq!(config.len(), 2);
         assert_eq!(config.rules[0].name, "organize-desktop");
         assert_eq!(
             config.rules[0].target.to_string_lossy(),
