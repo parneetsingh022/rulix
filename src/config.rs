@@ -1,6 +1,5 @@
 use std::{env, path::PathBuf, sync::LazyLock};
 
-
 /// System-wide configuration directory used by Rulix.
 ///
 /// Windows: %ProgramData%\.rulix
