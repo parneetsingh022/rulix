@@ -135,10 +135,73 @@ mod tests {
         #[cfg(not(target_os = "windows"))]
         assert_eq!(
             path,
-            PathBuf::from("/etc")
-                .join(".rulix")
-                .join("rules.yaml")
+            PathBuf::from("/etc").join(".rulix").join("rules.yaml")
         );
+    }
+
+    #[test]
+    fn default_rules_file_source_returns_its_path() {
+        let path = PathBuf::from("default_path");
+        let source = RulesFileSource::Default(path.clone());
+
+        assert_eq!(source.path(), path.as_path());
+    }
+
+    #[test]
+    fn user_rules_file_source_returns_its_path() {
+        let path = PathBuf::from("user_path");
+        let source = RulesFileSource::User(path.clone());
+
+        assert_eq!(source.path(), path.as_path());
+    }
+
+    #[test]
+    fn default_rules_file_source_is_not_user_provided() {
+        let source = RulesFileSource::Default(PathBuf::from("default_path"));
+
+        assert!(!source.is_user_provided());
+    }
+
+    #[test]
+    fn user_rules_file_source_is_user_provided() {
+        let source = RulesFileSource::User(PathBuf::from("user_path"));
+
+        assert!(source.is_user_provided());
+    }
+
+    #[test]
+    fn rule_steps_preserves_execution_order() {
+        let rule = Rule {
+            name: "organize-downloads".to_string(),
+            target: PathBuf::from("Downloads/report.pdf"),
+            steps: vec![
+                Step::new_match("pdf"),
+                Step::new_move_to("Documents/PDFs"),
+                Step::new_notify("Moved PDF file"),
+            ],
+        };
+
+        let steps: Vec<&Step> = rule.steps().collect();
+
+        assert_eq!(
+            steps,
+            vec![
+                &Step::new_match("pdf"),
+                &Step::new_move_to("Documents/PDFs"),
+                &Step::new_notify("Moved PDF file"),
+            ]
+        );
+    }
+
+    #[test]
+    fn rule_steps_returns_empty_iterator_when_no_steps_exist() {
+        let rule = Rule {
+            name: "empty-rule".to_string(),
+            target: PathBuf::from("Downloads"),
+            steps: vec![],
+        };
+
+        assert_eq!(rule.steps().count(), 0);
     }
 
     #[test]
