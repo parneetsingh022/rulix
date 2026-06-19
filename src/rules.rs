@@ -22,7 +22,6 @@ use crate::config::SYSTEM_CONFIG_DIR;
 use crate::errors::FileError;
 use crate::steps::Step;
 
-
 /// Returns the path to the default rules configuration file.
 ///
 /// The file is expected to be located in the system configuration
@@ -66,23 +65,21 @@ impl RulesFileSource {
     }
 }
 
-
 /// A single rule definition loaded from a rules file.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct Rule {
     pub name: String,
     pub target: PathBuf,
-    pub steps: VecDeque<Step>,
+    pub steps: Vec<Step>,
 }
 
 impl Rule {
-    // Returns an iterator over references to the steps
-    pub fn pop_next_step(&mut self) -> Option<Step> {
-        self.steps.pop_front()
+    /// Returns steps in execution order.
+    pub fn steps(&self) -> impl Iterator<Item = &Step> {
+        self.steps.iter()
     }
 }
-
 
 /// Collection of all rules defined in a configuration file.
 #[derive(Debug, Deserialize)]
@@ -149,39 +146,35 @@ mod tests {
         )
         .unwrap();
 
-        let mut config = RuleSet::from_file(&path).unwrap();
+        let config = RuleSet::from_file(&path).unwrap();
 
         assert_eq!(config.rules.len(), 2);
         assert_eq!(config.rules[0].name, "organize-desktop");
-        assert_eq!(config.rules[0].target.to_string_lossy(), "C:\\Users\\Parneet\\Desktop\\");
         assert_eq!(
-            config.rules[0].pop_next_step(),
-            Some(Step::new_match("pdf"))
+            config.rules[0].target.to_string_lossy(),
+            "C:\\Users\\Parneet\\Desktop\\"
         );
         assert_eq!(
-            config.rules[0].pop_next_step(),
-            Some(Step::new_move_to("C:\\Users\\Documents\\PDFs\\"))
-        );
-        assert_eq!(
-            config.rules[0].pop_next_step(),
-            Some(Step::new_notify("Large PDF moved successfully"))
+            config.rules[0].steps,
+            vec![
+                Step::new_match("pdf"),
+                Step::new_move_to("C:\\Users\\Documents\\PDFs\\"),
+                Step::new_notify("Large PDF moved successfully"),
+            ]
         );
 
         assert_eq!(config.rules[1].name, "clean-downloads");
-        assert_eq!(config.rules[1].target.to_string_lossy(), "C:\\Users\\Parneet\\Downloads\\");
         assert_eq!(
-            config.rules[1].pop_next_step(),
-            Some(Step::new_match("exe"))
+            config.rules[1].target.to_string_lossy(),
+            "C:\\Users\\Parneet\\Downloads\\"
         );
         assert_eq!(
-            config.rules[1].pop_next_step(),
-            Some(Step::new_move_to(
-                "C:\\Users\\Parneet\\Downloads\\Executables"
-            ))
-        );
-        assert_eq!(
-            config.rules[1].pop_next_step(),
-            Some(Step::new_notify("Moved exe files to Executables folder"))
+            config.rules[1].steps,
+            vec![
+                Step::new_match("exe"),
+                Step::new_move_to("C:\\Users\\Parneet\\Downloads\\Executables"),
+                Step::new_notify("Moved exe files to Executables folder"),
+            ]
         );
     }
 
