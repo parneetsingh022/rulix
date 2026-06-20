@@ -96,7 +96,7 @@ impl RuleSet {
         let file = match File::open(path) {
             Ok(file) => file,
             Err(e) if e.kind() == ErrorKind::NotFound => {
-                return Err(FileError::NotFound(path.display().to_string()));
+                return Err(FileError::NotFound(path.to_path_buf()));
             }
             Err(e) => return Err(e.into()),
         };
