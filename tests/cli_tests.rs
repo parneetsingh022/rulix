@@ -64,4 +64,21 @@ mod tests {
                 "config file not found: rule_file.yaml",
             ));
     }
+
+    #[test]
+    fn list_outputs_rules_from_yaml_file() {
+        let mut cmd = Command::cargo_bin("rulix").unwrap();
+
+        let output = cmd
+            .args(["list", "--rules", "tests/fixtures/move_files_with_ext.yaml"])
+            .assert()
+            .success()
+            .get_output()
+            .stdout
+            .clone();
+
+        let stdout = String::from_utf8(output).unwrap();
+
+        insta::assert_snapshot!(stdout);
+    }
 }
