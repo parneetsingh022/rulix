@@ -40,7 +40,7 @@ pub fn run(source: RulesFileSource) -> Result<()> {
         //
         // If the user explicitly provides a path with `--rules`, then that file is
         // expected to exist and a missing file should be reported as an error.
-        Err(FileError::NotFound(_)) if !source.is_user_provided() => {
+        Err(FileError::NotFound(_)) if source.is_default() => {
             println!("No rules to show.");
             return Ok(());
         }

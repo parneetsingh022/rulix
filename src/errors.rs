@@ -1,10 +1,12 @@
+use std::path::PathBuf;
+
 use thiserror::Error;
 
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum FileError {
     #[error("config file not found: {0}")]
-    NotFound(String),
+    NotFound(PathBuf),
 
     #[error("invalid config file")]
     InvalidYaml(#[source] serde_yaml::Error),

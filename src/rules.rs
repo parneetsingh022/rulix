@@ -59,8 +59,8 @@ impl RulesFileSource {
         }
     }
 
-    pub fn is_user_provided(&self) -> bool {
-        matches!(self, RulesFileSource::User(_))
+    pub fn is_default(&self) -> bool {
+        matches!(self, RulesFileSource::Default(_))
     }
 }
 
@@ -96,7 +96,7 @@ impl RuleSet {
         let file = match File::open(path) {
             Ok(file) => file,
             Err(e) if e.kind() == ErrorKind::NotFound => {
-                return Err(FileError::NotFound(path.display().to_string()));
+                return Err(FileError::NotFound(path.to_path_buf()));
             }
             Err(e) => return Err(e.into()),
         };
@@ -159,14 +159,14 @@ mod tests {
     fn default_rules_file_source_is_not_user_provided() {
         let source = RulesFileSource::Default(PathBuf::from("default_path"));
 
-        assert!(!source.is_user_provided());
+        assert!(source.is_default());
     }
 
     #[test]
     fn user_rules_file_source_is_user_provided() {
         let source = RulesFileSource::User(PathBuf::from("user_path"));
 
-        assert!(source.is_user_provided());
+        assert!(!source.is_default());
     }
 
     #[test]
