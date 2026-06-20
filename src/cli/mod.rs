@@ -21,19 +21,22 @@ pub struct Cli {
 pub enum Commands {
     /// Display all configured rules.
     List,
+
+    /// Run configured rules.
+    Run,
 }
 
 impl Cli {
     pub fn run(&self) -> Result<()> {
-        match &self.command {
-            Commands::List => {
-                let rules_path = match &self.rules {
-                    Some(path) => RulesFileSource::User(path.clone()),
-                    None => RulesFileSource::Default(default_rules_file()),
-                };
+        let rules_path = match &self.rules {
+            Some(path) => RulesFileSource::User(path.clone()),
+            None => RulesFileSource::Default(default_rules_file()),
+        };
 
-                list::run(rules_path)?
-            }
+        match &self.command {
+            Commands::List => list::run(rules_path)?,
+
+            Commands::Run => {}
         }
 
         Ok(())
