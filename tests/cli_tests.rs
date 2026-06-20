@@ -13,6 +13,25 @@ mod tests {
     }
 
     #[test]
+    fn prints_current_version_with_version_flag() {
+        let current_version = env!("CARGO_PKG_VERSION");
+
+        let mut cmd = Command::cargo_bin("rulix").unwrap();
+
+        cmd.arg("--version")
+            .assert()
+            .success()
+            .stdout(predicates::str::contains(format!(
+                "rulix {}",
+                current_version
+            )));
+    }
+
+    // #############################################################################
+    // # List command                                                              #
+    // #############################################################################
+
+    #[test]
     fn list_succeeds_when_default_config_is_missing() {
         let mut cmd = Command::cargo_bin("rulix").unwrap();
 
