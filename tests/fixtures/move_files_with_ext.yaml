@@ -1,0 +1,16 @@
+rules:
+  - name: "organize-desktop"
+    target: "C:\\Users\\Username\\Desktop"
+    steps:
+      - match:
+          ext: ".pdf" # extension
+      - move_to: "C:\\Users\\Documents\\PDFs\\"
+      - notify: "Large PDF moved successfully"
+
+  - name: "organize-downloads"
+    target: "C:\\Users\\Username\\Downloads"
+    steps:
+      - match:
+          ext: ".exe" # extension
+      - move_to: "C:\\Users\\Test\\PDFs\\"
+      - notify: "Moved binary files"

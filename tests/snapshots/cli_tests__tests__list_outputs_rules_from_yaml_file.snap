@@ -1,0 +1,14 @@
+---
+source: tests/cli_tests.rs
+expression: stdout
+---
+Rulix Configuration
+    File: tests/fixtures/move_files_with_ext.yaml
+    Rules: 2
+
+Available Rules
+
+    ID   RULE NAME                        TARGET DIR
+
+     0   organize-desktop                 C:\Users\Username\Desktop
+     1   organize-downloads               C:\Users\Username\Downloads

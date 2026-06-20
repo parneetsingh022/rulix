@@ -244,7 +244,7 @@ mod tests {
                 target: "C:\\Users\\Parneet\\Desktop\\"
                 steps:
                   - match:
-                      ext: "pdf" # extension
+                      ext: ".pdf" # extension
                   - move_to: "C:\\Users\\Documents\\PDFs\\"
                   - notify: "Large PDF moved successfully"
             
@@ -252,7 +252,7 @@ mod tests {
                 target: "C:\\Users\\Parneet\\Downloads\\"
                 steps:
                   - match:
-                      ext: "exe"
+                      ext: ".exe"
                   - move_to: "C:\\Users\\Parneet\\Downloads\\Executables"
                   - notify: "Moved exe files to Executables folder"
 
@@ -271,7 +271,7 @@ mod tests {
         assert_eq!(
             config.rules[0].steps,
             vec![
-                Step::new_match("pdf"),
+                Step::new_match(".pdf"),
                 Step::new_move_to("C:\\Users\\Documents\\PDFs\\"),
                 Step::new_notify("Large PDF moved successfully"),
             ]
@@ -285,7 +285,7 @@ mod tests {
         assert_eq!(
             config.rules[1].steps,
             vec![
-                Step::new_match("exe"),
+                Step::new_match(".exe"),
                 Step::new_move_to("C:\\Users\\Parneet\\Downloads\\Executables"),
                 Step::new_notify("Moved exe files to Executables folder"),
             ]
