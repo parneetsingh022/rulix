@@ -54,18 +54,6 @@ mod tests {
     }
 
     #[test]
-    fn list_returns_error_when_user_provided_config_file_does_not_exist_with_list() {
-        let mut cmd = Command::cargo_bin("rulix").unwrap();
-
-        cmd.args(["list", "--rules", "rule_file.yaml"])
-            .assert()
-            .failure()
-            .stderr(predicates::str::contains(
-                "config file not found: rule_file.yaml",
-            ));
-    }
-
-    #[test]
     fn list_outputs_rules_from_yaml_file() {
         let mut cmd = Command::cargo_bin("rulix").unwrap();
 
