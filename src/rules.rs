@@ -59,8 +59,8 @@ impl RulesFileSource {
         }
     }
 
-    pub fn is_user_provided(&self) -> bool {
-        matches!(self, RulesFileSource::User(_))
+    pub fn is_default(&self) -> bool {
+        matches!(self, RulesFileSource::Default(_))
     }
 }
 
@@ -159,14 +159,14 @@ mod tests {
     fn default_rules_file_source_is_not_user_provided() {
         let source = RulesFileSource::Default(PathBuf::from("default_path"));
 
-        assert!(!source.is_user_provided());
+        assert!(source.is_default());
     }
 
     #[test]
     fn user_rules_file_source_is_user_provided() {
         let source = RulesFileSource::User(PathBuf::from("user_path"));
 
-        assert!(source.is_user_provided());
+        assert!(!source.is_default());
     }
 
     #[test]
