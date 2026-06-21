@@ -11,15 +11,14 @@
 //! rule execution system.
 
 use serde::Deserialize;
+
 use std::{
     fs::File,
     io::ErrorKind,
     path::{Path, PathBuf},
 };
 
-use crate::config::SYSTEM_CONFIG_DIR;
-use crate::errors::FileError;
-use crate::steps::Step;
+use crate::{config::SYSTEM_CONFIG_DIR, errors::FileError, steps::Step};
 
 /// Returns the path to the default rules configuration file.
 ///
