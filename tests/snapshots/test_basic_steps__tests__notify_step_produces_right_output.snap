@@ -1,0 +1,6 @@
+---
+source: tests/test_basic_steps.rs
+expression: stdout
+---
+This is a notify test.
+This is second line of notify.

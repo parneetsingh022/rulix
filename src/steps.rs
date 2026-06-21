@@ -17,7 +17,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::errors::FileError;
+use crate::errors::{FileError, StepExecutionError};
 
 /// Rule filters used to evaluate whether a file matches a given `Step::Match`.
 #[derive(Debug, Deserialize, Eq, PartialEq)]
@@ -69,13 +69,17 @@ impl Step {
         &self,
         target: &Path,
         matched_files: &mut Vec<PathBuf>,
-    ) -> Result<(), FileError> {
+    ) -> Result<(), StepExecutionError> {
         match self {
             // Match fetch files based on target dir and criteria, then populates matched_fle vector
-            Step::Match { criteria } => handle_match(target, criteria, matched_files),
+            Step::Match { criteria } => {
+                handle_match(target, criteria, matched_files)?;
+                Ok(())
+            }
 
-            Step::MoveTo { .. } => unimplemented!(),
-            Step::Notify { .. } => unimplemented!(),
+            Step::MoveTo { .. } => Err(StepExecutionError::NotImplemented("move_to")),
+
+            Step::Notify { notify } => handle_notify(notify.as_str()),
         }
     }
 }
@@ -104,6 +108,12 @@ fn handle_match(
             matched_files.push(file_path);
         }
     }
+
+    Ok(())
+}
+
+fn handle_notify(arg: &str) -> Result<(), StepExecutionError> {
+    println!("{}", arg);
 
     Ok(())
 }
@@ -207,5 +217,13 @@ mod tests {
         expected.sort();
 
         assert_eq!(matched_files, expected);
+    }
+
+    #[test]
+    fn notify_step_executes_successfully() {
+        let step = Step::new_notify("hello world");
+        let mut matched_files = Vec::new();
+
+        assert!(step.execute(Path::new("."), &mut matched_files).is_ok());
     }
 }

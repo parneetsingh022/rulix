@@ -14,3 +14,13 @@ pub enum FileError {
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
 }
+
+#[derive(Debug, Error)]
+#[non_exhaustive]
+pub enum StepExecutionError {
+    #[error(transparent)]
+    File(#[from] FileError),
+
+    #[error("step '{0}' is not implemented")]
+    NotImplemented(&'static str),
+}
