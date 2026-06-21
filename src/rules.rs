@@ -89,7 +89,7 @@ pub struct RuleSet {
     pub rules: Vec<Rule>,
 
     #[serde(skip)]
-    path: PathBuf,
+    pub path: PathBuf,
 }
 
 impl<'a> IntoIterator for &'a RuleSet {
