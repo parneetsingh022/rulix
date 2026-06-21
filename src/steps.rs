@@ -92,7 +92,6 @@ fn handle_match(
         let file_path = entry.path();
 
         if file_path.is_file() && criteria.matches(file_path.as_path()) {
-            println!("Matched file: {}", file_path.display());
             matched_files.push(file_path);
         }
     }
