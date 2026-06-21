@@ -72,8 +72,8 @@ impl Step {
             // Match fetch files based on target dir and criteria, then populates matched_fle vector
             Step::Match { criteria } => handle_match(target, criteria, matched_files),
 
-            Step::MoveTo { move_to } => handle_move_to(move_to.as_path()),
-            Step::Notify { notify } => handle_notify(notify.as_str()),
+            Step::MoveTo { .. } => unimplemented!(),
+            Step::Notify { .. } => unimplemented!(),
         }
     }
 }
@@ -96,18 +96,6 @@ fn handle_match(
             matched_files.push(file_path);
         }
     }
-
-    Ok(())
-}
-
-fn handle_move_to(move_to: &Path) -> Result<(), FileError> {
-    println!("{}", move_to.display());
-
-    Ok(())
-}
-
-fn handle_notify(notify: &str) -> Result<(), FileError> {
-    println!("{}", notify);
 
     Ok(())
 }
