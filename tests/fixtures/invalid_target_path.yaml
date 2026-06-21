@@ -1,0 +1,6 @@
+rules:
+  - name: "organize-desktop"
+    target: "invalid/file/path"
+    steps:
+      - match:
+          ext: "exe"

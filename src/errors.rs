@@ -5,7 +5,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum FileError {
-    #[error("config file not found: {0}")]
+    #[error("file not found: {0}")]
     NotFound(PathBuf),
 
     #[error("invalid config file")]

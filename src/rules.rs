@@ -87,6 +87,18 @@ impl Rule {
 #[serde(rename_all = "snake_case")]
 pub struct RuleSet {
     pub rules: Vec<Rule>,
+
+    #[serde(skip)]
+    path: PathBuf,
+}
+
+impl<'a> IntoIterator for &'a RuleSet {
+    type Item = &'a Rule;
+    type IntoIter = std::slice::Iter<'a, Rule>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.rules.iter()
+    }
 }
 
 impl RuleSet {
@@ -101,7 +113,16 @@ impl RuleSet {
             Err(e) => return Err(e.into()),
         };
 
-        serde_yaml::from_reader(file).map_err(FileError::InvalidYaml)
+        let mut rule_set: RuleSet =
+            serde_yaml::from_reader(file).map_err(FileError::InvalidYaml)?;
+        rule_set.path = path.to_path_buf();
+
+        Ok(rule_set)
+    }
+
+    /// Returns path from which RuleSet is built.
+    pub fn path(&self) -> &Path {
+        self.path.as_path()
     }
 
     /// Returns total number of rules.
@@ -207,6 +228,7 @@ mod tests {
     #[test]
     fn rule_set_len_returns_number_of_rules() {
         let rule_set = RuleSet {
+            path: PathBuf::from("path/to/file"),
             rules: vec![
                 Rule {
                     name: "first".to_string(),
@@ -226,7 +248,10 @@ mod tests {
 
     #[test]
     fn rule_set_len_returns_zero_when_no_rules_exist() {
-        let rule_set = RuleSet { rules: vec![] };
+        let rule_set = RuleSet {
+            path: PathBuf::from("path/to/file"),
+            rules: vec![],
+        };
 
         assert_eq!(rule_set.len(), 0);
     }

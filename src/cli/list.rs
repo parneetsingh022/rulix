@@ -13,11 +13,9 @@
 //! requiring users to manually inspect the configuration file.
 
 use anyhow::Result;
-
 use std::borrow::Cow;
 
-use crate::errors::FileError;
-use crate::rules::{RuleSet, RulesFileSource};
+use crate::rules::RuleSet;
 
 /// Displays all rules defined in the provided rules file.
 ///
@@ -28,26 +26,7 @@ use crate::rules::{RuleSet, RulesFileSource};
 ///
 /// Returns an error if the configuration file cannot be read, parsed, or
 /// validated.
-pub fn run(source: RulesFileSource) -> Result<()> {
-    let rules_path = source.path();
-
-    let rules = match RuleSet::from_file(rules_path) {
-        Ok(rules) => rules,
-
-        // When `--rules` is not provided, Rulix falls back to its default rules file.
-        // That file may not exist yet, especially on first startup, so a missing
-        // default rules file is not treated as an error.
-        //
-        // If the user explicitly provides a path with `--rules`, then that file is
-        // expected to exist and a missing file should be reported as an error.
-        Err(FileError::NotFound(_)) if source.is_default() => {
-            println!("No rules to show.");
-            return Ok(());
-        }
-
-        Err(err) => return Err(err.into()),
-    };
-
+pub fn run(rules: RuleSet) -> Result<()> {
     let indent_size = 4;
     let max_name_length = 30;
 
@@ -59,7 +38,7 @@ pub fn run(source: RulesFileSource) -> Result<()> {
         "{space:<indent_width$}File: {path}",
         space = "",
         indent_width = indent_size,
-        path = rules_path.display()
+        path = rules.path().display()
     );
     println!(
         "{space:<indent_width$}Rules: {count}",
