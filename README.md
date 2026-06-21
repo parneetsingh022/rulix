@@ -13,7 +13,7 @@
 
 ---
 <p align="center">
-  <img src="https://img.shields.io/github/license/parneetsingh022/rulix?style=flat-square" alt="GitHub License" />
+  <img src="https://img.shields.io/badge/license-MIT%20%2F%20Apache%202.0-green?style=flat-square" alt="GitHub License" />
   <img src="https://img.shields.io/github/actions/workflow/status/parneetsingh022/rulix/rust.yml?branch=main&style=flat-square&label=build" alt="GitHub Workflow Status" />
   <img src="https://img.shields.io/codecov/c/github/parneetsingh022/rulix?style=flat-square" alt="Codecov" />
   <img src="https://img.shields.io/badge/rust-%23000000.svg?style=flat-square&logo=rust&logoColor=white" alt="Rust" />
