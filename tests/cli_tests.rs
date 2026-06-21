@@ -48,7 +48,7 @@ mod tests {
         cmd.args(["list", "--rules", "rule_file.yaml"])
             .assert()
             .failure()
-            .stderr(predicates::str::contains("file not found: rule_file.yaml"));
+            .stderr(predicates::str::contains("path not found: rule_file.yaml"));
     }
 
     #[test]

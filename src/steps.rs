@@ -64,14 +64,13 @@ pub enum Step {
 }
 
 impl Step {
-    // Run/execute individual step
     pub fn execute(
         &self,
         target: &Path,
         matched_files: &mut Vec<PathBuf>,
     ) -> Result<(), StepExecutionError> {
         match self {
-            // Match fetch files based on target dir and criteria, then populates matched_fle vector
+            // Match: fetches files from the target directory matching the criteria, then populates the matched_files vector.
             Step::Match { criteria } => {
                 handle_match(target, criteria, matched_files)?;
                 Ok(())
