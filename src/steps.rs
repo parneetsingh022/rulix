@@ -29,9 +29,11 @@ pub struct MatchCriteria {
 impl MatchCriteria {
     pub fn matches(&self, path: &Path) -> bool {
         if let Some(ext) = &self.ext {
+            // Allow user to add extinsion with or without a leading `.`
+            let expected_ext = ext.trim_start_matches(".");
             let file_ext = path.extension().and_then(|e| e.to_str());
 
-            if file_ext != Some(ext.as_str()) {
+            if file_ext != Some(expected_ext) {
                 return false;
             }
         }
@@ -153,6 +155,23 @@ mod tests {
 
         assert!(error_message.contains("does-not-exist"));
         assert!(matched_files.is_empty());
+    }
+
+    #[test]
+    fn match_returns_file_with_extension_containing_leading_dot() {
+        let temp_dir = tempdir().unwrap();
+        let text_file = temp_dir.path().join("file.txt");
+        std::fs::write(&text_file, "hello").unwrap();
+
+        let criteria = MatchCriteria {
+            ext: Some(".txt".to_string()),
+        };
+
+        let mut matched_files: Vec<PathBuf> = Vec::new();
+
+        handle_match(temp_dir.path(), &criteria, &mut matched_files).unwrap();
+
+        assert_eq!(matched_files, vec![text_file]);
     }
 
     #[test]
