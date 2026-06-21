@@ -1,5 +1,7 @@
 <div align="center">
-  <a href="https://github.com/parneetsingh022/pygha"><img alt="logo_pygha_dark" width="300px" src="https://github.com/user-attachments/assets/261f2b42-fa1e-448d-83ae-639a09808888" /></a>
+  <a href="https://github.com/parneetsingh022/pygha">
+    <img alt="logo" width="300px" src="https://github.com/user-attachments/assets/faa43244-dc54-4968-b667-30487cf7715d" />
+  </a>
 </div>
 
 
