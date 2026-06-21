@@ -1,0 +1,6 @@
+---
+source: tests/cli_tests.rs
+expression: stdout
+---
+This is a notify test.
+This is second line of notify.

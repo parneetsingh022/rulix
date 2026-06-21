@@ -2,6 +2,7 @@ mod cli;
 mod config;
 mod errors;
 mod rules;
+mod runner;
 mod steps;
 
 use anyhow::Result;

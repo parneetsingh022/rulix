@@ -1,0 +1,6 @@
+rules:
+  - name: "test-notify-step"
+    target: "."
+    steps:
+      - notify: "This is a notify test."
+      - notify: "This is second line of notify."

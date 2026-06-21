@@ -5,7 +5,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum FileError {
-    #[error("config file not found: {0}")]
+    #[error("path not found: {0}")]
     NotFound(PathBuf),
 
     #[error("invalid config file")]
@@ -13,4 +13,14 @@ pub enum FileError {
 
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+}
+
+#[derive(Debug, Error)]
+#[non_exhaustive]
+pub enum StepExecutionError {
+    #[error(transparent)]
+    File(#[from] FileError),
+
+    #[error("step '{0}' is not implemented")]
+    NotImplemented(&'static str),
 }

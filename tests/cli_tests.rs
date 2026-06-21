@@ -48,9 +48,7 @@ mod tests {
         cmd.args(["list", "--rules", "rule_file.yaml"])
             .assert()
             .failure()
-            .stderr(predicates::str::contains(
-                "config file not found: rule_file.yaml",
-            ));
+            .stderr(predicates::str::contains("path not found: rule_file.yaml"));
     }
 
     #[test]
@@ -59,6 +57,38 @@ mod tests {
 
         let output = cmd
             .args(["list", "--rules", "tests/fixtures/move_files_with_ext.yaml"])
+            .assert()
+            .success()
+            .get_output()
+            .stdout
+            .clone();
+
+        let stdout = String::from_utf8(output).unwrap();
+
+        insta::assert_snapshot!(stdout);
+    }
+
+    // #############################################################################
+    // # Run command                                                               #
+    // #############################################################################
+
+    #[test]
+    fn invalid_file_path_in_target_must_return_path_in_error() {
+        let mut cmd = Command::cargo_bin("rulix").unwrap();
+
+        let _ = cmd
+            .args(["run", "--rules", "tests/fixtures/invalid_target_path.yaml"])
+            .assert()
+            .failure()
+            .stderr(predicates::str::contains("invalid/file/path"));
+    }
+
+    #[test]
+    fn notify_step_produces_right_output() {
+        let mut cmd = Command::cargo_bin("rulix").unwrap();
+
+        let output = cmd
+            .args(["run", "--rules", "tests/fixtures/notify_step.yaml"])
             .assert()
             .success()
             .get_output()
