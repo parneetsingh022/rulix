@@ -4,12 +4,21 @@ version = "0.1.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 
+[workspace]
+members = [
+    ".",
+    "crates/rulix-fs"
+]
+resolver = "2"
+
 [dependencies]
 anyhow = "1.0.102"
 clap = { version = "4", features = ["derive"] }
 serde = {version = "1.0.228", features = ["derive"]}
 serde_yaml = "0.9.34"
 thiserror = "2.0.18"
+
+rulix-fs = { path = "crates/rulix-fs" }
 
 [profile.release]
 strip = true

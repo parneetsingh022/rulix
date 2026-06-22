@@ -462,8 +462,17 @@ dependencies = [
  "indoc",
  "insta",
  "predicates",
+ "rulix-fs",
  "serde",
  "serde_yaml",
+ "tempfile",
+ "thiserror",
+]
+
+[[package]]
+name = "rulix-fs"
+version = "0.1.0"
+dependencies = [
  "tempfile",
  "thiserror",
 ]
