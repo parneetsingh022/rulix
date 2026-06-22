@@ -7,7 +7,7 @@ license = "MIT OR Apache-2.0"
 [workspace]
 members = [
     ".",
-    "crates/rulix-fs"
+    "crates/undo-fs"
 ]
 resolver = "2"
 
@@ -18,7 +18,7 @@ serde = {version = "1.0.228", features = ["derive"]}
 serde_yaml = "0.9.34"
 thiserror = "2.0.18"
 
-rulix-fs = { path = "crates/rulix-fs" }
+undo-fs = { path = "crates/undo-fs" }
 
 [profile.release]
 strip = true

@@ -9,12 +9,12 @@ repos:
 
       - id: clippy
         name: cargo clippy
-        entry: cargo clippy --all-targets --all-features -- -D warnings
+        entry: cargo clippy --all-targets --workspace --all-features -- -D warnings
         language: system
         pass_filenames: false
 
       - id: tests
         name: cargo test
-        entry: cargo test --all-features
+        entry: cargo test --workspace --all-features --verbose
         language: system
         pass_filenames: false
