@@ -75,6 +75,25 @@ pub fn get_file_hash(path: impl AsRef<Path>) -> Result<String, FileError> {
     Ok(hex::encode(result))
 }
 
+/// Verifies that a file's current contents match the expected checksum.
+///
+/// The file is hashed and compared against `checksum`. Returns `true` if the
+/// computed hash matches the expected value and `false` otherwise.
+///
+/// This function is typically used to ensure that a file has not been modified
+/// since an operation was recorded, allowing potentially destructive actions
+/// such as undo operations to be performed safely.
+///
+/// # Errors
+///
+/// Returns [`FileError`] if the file cannot be accessed or its hash cannot be
+/// computed.
+pub fn file_checksum_matches(path: impl AsRef<Path>, checksum: &str) -> Result<bool, FileError> {
+    let actual = get_file_hash(path)?;
+
+    Ok(actual == checksum)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -149,5 +168,59 @@ mod tests {
         // Verify it bubbles up a clean error variant instead of panicking
         assert!(result.is_err());
         assert!(matches!(result.err(), Some(FileError::NotFound(_))))
+    }
+
+    #[test]
+    fn verify_file_checksum_returns_true_when_checksum_matches() {
+        let path = std::env::temp_dir().join("checksum_match_test.txt");
+
+        fs::write(&path, "hello world").unwrap();
+
+        let checksum = get_file_hash(&path).unwrap();
+
+        let result = file_checksum_matches(&path, &checksum).unwrap();
+
+        assert!(result);
+
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn verify_file_checksum_returns_false_when_checksum_does_not_match() {
+        let path = std::env::temp_dir().join("checksum_mismatch_test.txt");
+
+        fs::write(&path, "hello world").unwrap();
+
+        let result = file_checksum_matches(&path, "not-the-real-checksum").unwrap();
+
+        assert!(!result);
+
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn verify_file_checksum_detects_modified_file_contents() {
+        let path = std::env::temp_dir().join("checksum_modified_test.txt");
+
+        fs::write(&path, "original contents").unwrap();
+
+        let original_checksum = get_file_hash(&path).unwrap();
+
+        fs::write(&path, "modified contents").unwrap();
+
+        let result = file_checksum_matches(&path, &original_checksum).unwrap();
+
+        assert!(!result);
+
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn verify_file_checksum_returns_error_for_missing_file() {
+        let path = std::env::temp_dir().join("checksum_missing_file_test.txt");
+
+        let result = file_checksum_matches(&path, "some-checksum");
+
+        assert!(result.is_err());
     }
 }

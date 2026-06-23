@@ -14,4 +14,7 @@ pub enum FileError {
 
     #[error("file not found {0}")]
     NotFound(PathBuf),
+
+    #[error("file contents changed {0}")]
+    FileContentsChanged(PathBuf),
 }

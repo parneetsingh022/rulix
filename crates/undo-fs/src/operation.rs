@@ -4,9 +4,18 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::errors::FileError;
+use crate::{checksum::file_checksum_matches, errors::FileError};
 
-fn move_op(from: &Path, to: &Path) -> Result<(), FileError> {
+fn move_op(from: &Path, to: &Path, checksum: Option<&str>) -> Result<(), FileError> {
+    // Verify that the file has not been modified since the operation was
+    // recorded. Undo operations are only permitted when the file's current
+    // contents match the original checksum.
+    if let Some(c) = checksum
+        && !file_checksum_matches(from, c)?
+    {
+        return Err(FileError::FileContentsChanged(from.to_path_buf()));
+    }
+
     fs::rename(from, to)?;
 
     Ok(())
@@ -26,7 +35,9 @@ pub enum Operation {
 impl Operation {
     pub fn execute(&self) -> Result<(), FileError> {
         match self {
-            Operation::Move { from, to, .. } => move_op(from.as_path(), to.as_path())?,
+            Operation::Move {
+                from, to, checksum, ..
+            } => move_op(from.as_path(), to.as_path(), checksum.as_deref())?,
         }
 
         Ok(())

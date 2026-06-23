@@ -28,6 +28,7 @@ impl FileHandler {
         // Only record the operation in our history if it executes successfully.
         // This prevents failed operations from polluting the undo stack.
         op.execute()?;
+
         self.operations.push(op);
 
         Ok(())
@@ -74,7 +75,7 @@ mod tests {
 
         assert!(file1.is_file());
 
-        let mut fh = FileHandler::default();
+        let mut fh = FileHandler::new();
         fh.move_file(&file1, &file2)?;
 
         assert!(!file1.is_file());
@@ -91,7 +92,6 @@ mod tests {
 
     #[test]
     fn complex_multi_move_and_undo_all() -> Result<(), FileError> {
-        // --- 1. Arrange: Setup nested directories and initial files ---
         let base_dir = TempDir::new()?;
 
         let dir_a = base_dir.path().join("folder_a");
@@ -160,6 +160,33 @@ mod tests {
         assert!(a_file2.is_file());
         assert_eq!(fs::read(&a_file1)?, b"Content of Document 1");
         assert_eq!(fs::read(&a_file2)?, b"Content of Document 2");
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_undo_fail_when_file_contents_changed() -> Result<(), FileError> {
+        let base_dir = TempDir::new()?;
+
+        let file1 = base_dir.path().join("file.txt");
+        let file2 = base_dir.path().join("file2.txt");
+
+        fs::write(&file1, "Content")?;
+
+        let mut fh = FileHandler::new();
+        fh.move_file(&file1, &file2)?;
+
+        fs::write(&file2, "New Content")?;
+
+        match fh.undo() {
+            Err(FileError::FileContentsChanged(path)) => {
+                assert_eq!(path, file2);
+            }
+            other => panic!("Expected FileContentsChanged, got {:?}", other),
+        }
+
+        assert!(file2.exists());
+        assert!(!file1.exists());
 
         Ok(())
     }
