@@ -1,38 +1,14 @@
 use serde::{Deserialize, Serialize};
 use std::{
-    borrow::Cow,
     fs,
     path::{Path, PathBuf},
 };
 
 use crate::{checksum::file_checksum_matches, errors::FileError};
 
-/// Resolves the final destination path for a move operation.
-///
-/// If `to` refers to an existing directory, the file name from `from` is
-/// appended to it and the resulting path is returned. Otherwise, `to` is
-/// treated as the complete destination path and returned unchanged.
-///
-/// This mirrors the behavior of common file move utilities, where moving a
-/// file to a directory preserves its file name, while moving it to a file
-/// path effectively renames it.
-fn resolve_move_destination<'a>(from: &Path, to: &'a Path) -> Cow<'a, Path> {
-    if !to.is_dir() {
-        return Cow::Borrowed(to);
-    }
-
-    let Some(filename) = from.file_name() else {
-        return Cow::Borrowed(to);
-    };
-
-    Cow::Owned(to.join(filename))
-}
-
 fn move_op(from: &Path, to: &Path, checksum: Option<&str>) -> Result<(), FileError> {
-    let target = resolve_move_destination(from, to);
-
-    if target.exists() {
-        return Err(FileError::TargetAlreadyExists(target.to_path_buf()));
+    if to.exists() {
+        return Err(FileError::TargetAlreadyExists(to.to_path_buf()));
     }
 
     // Verify that the file has not been modified since the operation was
@@ -44,7 +20,7 @@ fn move_op(from: &Path, to: &Path, checksum: Option<&str>) -> Result<(), FileErr
         return Err(FileError::FileContentsChanged(from.to_path_buf()));
     }
 
-    fs::rename(from, target.as_ref())?;
+    fs::rename(from, to)?;
 
     Ok(())
 }

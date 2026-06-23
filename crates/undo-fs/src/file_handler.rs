@@ -1,5 +1,26 @@
 use crate::{Operation, checksum::get_file_hash, errors::FileError};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+/// Resolves the final destination path for a move operation.
+///
+/// If `to` refers to an existing directory, the file name from `from` is
+/// appended to it and the resulting path is returned. Otherwise, `to` is
+/// treated as the complete destination path and returned unchanged.
+///
+/// This mirrors the behavior of common file move utilities, where moving a
+/// file to a directory preserves its file name, while moving it to a file
+/// path effectively renames it.
+fn resolve_move_destination(from: &Path, to: &Path) -> PathBuf {
+    if !to.is_dir() {
+        return to.to_path_buf();
+    }
+
+    let Some(filename) = from.file_name() else {
+        return to.to_path_buf();
+    };
+
+    to.join(filename)
+}
 
 #[derive(Default)]
 pub struct FileHandler {
@@ -18,9 +39,14 @@ impl FileHandler {
     ) -> Result<(), FileError> {
         let hash = get_file_hash(&from)?;
 
+        // Resolve the final move destination. If `to` is an existing directory,
+        // preserve the source file name by moving into that directory; otherwise
+        // treat `to` as the complete destination path (i.e. a rename target).
+        let target = resolve_move_destination(from.as_ref(), to.as_ref());
+
         let op = Operation::Move {
             from: from.as_ref().to_path_buf(),
-            to: to.as_ref().to_path_buf(),
+            to: target,
             is_dir: false,
             checksum: Some(hash),
         };
@@ -197,6 +223,12 @@ mod tests {
         assert!(!file1.is_file());
         assert!(new_file.is_file());
         assert_eq!(fs::read(&new_file)?, b"File 1 Contents");
+
+        fh.undo()?;
+
+        assert!(file1.is_file());
+        assert!(!new_file.is_file());
+        assert_eq!(fs::read(&file1)?, b"File 1 Contents");
 
         Ok(())
     }
