@@ -2,9 +2,9 @@ name: Coverage
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
 
 permissions:
   contents: read
@@ -27,7 +27,7 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
 
       - name: Generate coverage report
-        run: cargo llvm-cov --all-features --lcov --output-path lcov.info
+        run: cargo llvm-cov --workspace --all-targets --all-features --lcov --output-path lcov.info
         
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
