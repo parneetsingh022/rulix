@@ -35,13 +35,16 @@ impl FileHandler {
     }
 
     pub fn undo(&mut self) -> Result<(), FileError> {
-        if let Some(op) = self.operations.pop() {
-            op.undo()?;
+        let Some(op) = self.operations.pop() else {
+            return Err(FileError::NothingToUndo);
+        };
 
-            return Ok(());
+        if let Err(e) = op.undo() {
+            self.operations.push(op);
+            return Err(e);
         }
 
-        Err(FileError::NothingToUndo)
+        Ok(())
     }
 
     pub fn undo_all(&mut self) -> Result<(), FileError> {
