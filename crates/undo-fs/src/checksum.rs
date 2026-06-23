@@ -67,7 +67,7 @@ pub fn get_file_hash(path: impl AsRef<Path>) -> Result<String, FileError> {
             break;
         }
 
-        hasher.update(&buffer[..n])
+        hasher.update(&buffer[..n]);
     }
 
     let result = hasher.finalize();
