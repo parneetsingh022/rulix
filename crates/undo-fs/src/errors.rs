@@ -4,17 +4,17 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum FileError {
-    #[error("IO operational error: {0}")]
+    #[error("io error: {0}")]
     Io(#[from] std::io::Error),
-    #[error("Failed to parse JSON line: {0}")]
+    #[error("failed to parse json: {0}")]
     Json(#[from] serde_json::Error),
 
-    #[error("Undo failed, nothing to undo")]
+    #[error("undo failed: nothing to undo")]
     NothingToUndo,
 
-    #[error("file not found {0}")]
+    #[error("path not found: {0}")]
     NotFound(PathBuf),
 
-    #[error("file contents changed {0}")]
+    #[error("file contents changed: {0}")]
     FileContentsChanged(PathBuf),
 }

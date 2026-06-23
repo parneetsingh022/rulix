@@ -24,7 +24,7 @@ fn move_op(from: &Path, to: &Path, checksum: Option<&str>) -> Result<(), FileErr
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 pub enum Operation {
     Move {
-        // Use full, complete absolute paths for clear tracking
+        // Paths as provided by the caller (may be absolute or relative)
         from: PathBuf,
         to: PathBuf,
         is_dir: bool,
