@@ -94,6 +94,114 @@ mod tests {
     }
 
     #[test]
+    fn move_file_fails_when_source_does_not_exist() -> Result<(), FileError> {
+        let dir = TempDir::new()?;
+
+        let file1 = dir.path().join("missing.txt");
+        let file2 = dir.path().join("file2.txt");
+
+        let mut fh = FileHandler::new();
+        let result = fh.move_file(&file1, &file2);
+
+        assert!(matches!(
+            result,
+            Err(FileError::NotFound(path)) if path == file1
+        ));
+
+        assert!(!file1.exists());
+        assert!(!file2.exists());
+
+        Ok(())
+    }
+
+    #[test]
+    fn move_file_fails_when_file_already_exists() -> Result<(), FileError> {
+        let dir = TempDir::new()?;
+
+        let file1 = dir.path().join("file.txt");
+        fs::write(&file1, "File 1 Contents")?;
+
+        let file2 = dir.path().join("file2.txt");
+        fs::write(&file2, "File 2 Contents")?;
+
+        assert!(file1.is_file());
+        assert!(file2.is_file());
+
+        let mut fh = FileHandler::new();
+        let result = fh.move_file(&file1, &file2);
+
+        assert!(matches!(
+            result.err(),
+            Some(FileError::TargetAlreadyExists(path)) if path == file2
+        ));
+
+        assert!(file1.is_file());
+        assert_eq!(fs::read(&file1)?, b"File 1 Contents");
+
+        assert!(file2.is_file());
+        assert_eq!(fs::read(&file2)?, b"File 2 Contents");
+
+        Ok(())
+    }
+
+    #[test]
+    fn move_file_to_directory_fails_if_file_with_same_name_exists() -> Result<(), FileError> {
+        let dir = TempDir::new()?;
+
+        let file1 = dir.path().join("file.txt");
+        fs::write(&file1, "Original contents")?;
+
+        let target_dir = dir.path().join("target_dir");
+        fs::create_dir(&target_dir)?;
+
+        let existing_target = target_dir.join("file.txt");
+        fs::write(&existing_target, "Existing contents")?;
+
+        let mut fh = FileHandler::new();
+        let result = fh.move_file(&file1, &target_dir);
+
+        match result {
+            Err(FileError::TargetAlreadyExists(path)) => {
+                assert_eq!(path, existing_target);
+            }
+            other => panic!("Expected TargetAlreadyExists, got {:?}", other),
+        }
+
+        assert!(file1.exists());
+        assert!(existing_target.exists());
+        assert_eq!(fs::read(&file1)?, b"Original contents");
+        assert_eq!(fs::read(&existing_target)?, b"Existing contents");
+
+        Ok(())
+    }
+
+    #[test]
+    fn move_file_to_a_folder_path() -> Result<(), FileError> {
+        let dir = TempDir::new()?;
+
+        let file1 = dir.path().join("file.txt");
+        fs::write(&file1, "File 1 Contents")?;
+
+        let new_dir = dir.path().join("new_dir");
+        fs::create_dir(&new_dir)?;
+
+        let new_file = new_dir.join("file.txt");
+
+        assert!(file1.is_file());
+        assert!(new_dir.is_dir());
+        assert!(!new_file.is_file());
+
+        let mut fh = FileHandler::new();
+        fh.move_file(&file1, &new_dir)?;
+
+        assert!(!file1.is_file());
+        assert!(new_file.is_file());
+        assert_eq!(fs::read(&new_file)?, b"File 1 Contents");
+
+        Ok(())
+    }
+
+    #[test]
     fn complex_multi_move_and_undo_all() -> Result<(), FileError> {
         let base_dir = TempDir::new()?;
 

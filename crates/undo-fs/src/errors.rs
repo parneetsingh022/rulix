@@ -15,6 +15,9 @@ pub enum FileError {
     #[error("path not found: {0}")]
     NotFound(PathBuf),
 
+    #[error("target path already exists: {0}")]
+    TargetAlreadyExists(PathBuf),
+
     #[error("file contents changed: {0}")]
     FileContentsChanged(PathBuf),
 }
