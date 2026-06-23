@@ -52,8 +52,8 @@ impl FileHandler {
             return Err(FileError::NothingToUndo);
         };
 
-        while let Some(op) = self.operations.pop() {
-            op.undo()?;
+        while !self.operations.is_empty() {
+            self.undo()?;
         }
 
         Ok(())
@@ -190,6 +190,80 @@ mod tests {
 
         assert!(file2.exists());
         assert!(!file1.exists());
+
+        Ok(())
+    }
+
+    #[test]
+    fn undo_failure_keeps_operation_so_it_can_be_retried() -> Result<(), FileError> {
+        let base_dir = TempDir::new()?;
+
+        let file1 = base_dir.path().join("file.txt");
+        let file2 = base_dir.path().join("file2.txt");
+
+        fs::write(&file1, "Content")?;
+
+        let mut fh = FileHandler::new();
+        fh.move_file(&file1, &file2)?;
+
+        fs::write(&file2, "New Content")?;
+
+        assert!(matches!(
+            fh.undo(),
+            Err(FileError::FileContentsChanged(path)) if path == file2
+        ));
+
+        assert!(file2.exists());
+        assert!(!file1.exists());
+
+        // Resolve the issue
+        fs::write(&file2, "Content")?;
+
+        // Retry should now succeed because the failed operation was pushed back
+        fh.undo()?;
+
+        assert!(file1.exists());
+        assert!(!file2.exists());
+        assert_eq!(fs::read(&file1)?, b"Content");
+
+        Ok(())
+    }
+
+    #[test]
+    fn undo_all_failure_keeps_failing_operation_so_it_can_be_retried() -> Result<(), FileError> {
+        let base_dir = TempDir::new()?;
+
+        let file1 = base_dir.path().join("file.txt");
+        let file2 = base_dir.path().join("file2.txt");
+        let file3 = base_dir.path().join("file3.txt");
+
+        fs::write(&file1, "Content")?;
+
+        let mut fh = FileHandler::new();
+        fh.move_file(&file1, &file2)?;
+        fh.move_file(&file2, &file3)?;
+
+        fs::write(&file3, "New Content")?;
+
+        assert!(matches!(
+            fh.undo_all(),
+            Err(FileError::FileContentsChanged(path)) if path == file3
+        ));
+
+        assert!(file3.exists());
+        assert!(!file2.exists());
+        assert!(!file1.exists());
+
+        // Resolve the issue
+        fs::write(&file3, "Content")?;
+
+        // Retry should now undo both operations
+        fh.undo_all()?;
+
+        assert!(file1.exists());
+        assert!(!file2.exists());
+        assert!(!file3.exists());
+        assert_eq!(fs::read(&file1)?, b"Content");
 
         Ok(())
     }
