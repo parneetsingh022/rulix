@@ -68,7 +68,7 @@ jobs:
           sudo mkdir -p /mnt/move-dst
           sudo mount -t tmpfs tmpfs /mnt/move-dst
           mkdir -p "$RUNNER_TEMP/move-src"
-          MOVE_TEST_SRC="$RUNNER_TEMP/move-src" MOVE_TEST_DST="/mnt/move-dst" cargo test -p undo-fs cross_device_move_file_and_undo -- --ignored --nocapture
+          MOVE_TEST_SRC="$RUNNER_TEMP/move-src" MOVE_TEST_DST="/mnt/move-dst" cargo test -p undo-fs cross_device -- --ignored --nocapture
 
       - name: Windows cross-drive move test
         if: runner.os == 'Windows'
@@ -86,4 +86,4 @@ jobs:
 
           $env:MOVE_TEST_SRC = "C:\move-src"
           $env:MOVE_TEST_DST = "D:\move-dst"
-          cargo test -p undo-fs cross_device_move_file_and_undo -- --ignored --nocapture
+          cargo test -p undo-fs cross_device -- --ignored --nocapture

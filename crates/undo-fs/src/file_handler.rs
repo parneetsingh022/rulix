@@ -435,47 +435,4 @@ mod tests {
 
         Ok(())
     }
-
-    #[test]
-    #[ignore = "requires MOVE_TEST_SRC and MOVE_TEST_DST on different filesystems"]
-    fn cross_device_move_file_and_undo() -> Result<(), FileError> {
-        let Ok(src_dir) = std::env::var("MOVE_TEST_SRC") else {
-            eprintln!("Skipping cross-device test: MOVE_TEST_SRC not set");
-            return Ok(());
-        };
-
-        let Ok(dst_dir) = std::env::var("MOVE_TEST_DST") else {
-            eprintln!("Skipping cross-device test: MOVE_TEST_DST not set");
-            return Ok(());
-        };
-
-        let src_dir = PathBuf::from(src_dir);
-        let dst_dir = PathBuf::from(dst_dir);
-
-        fs::create_dir_all(&src_dir)?;
-        fs::create_dir_all(&dst_dir)?;
-
-        let file1 = src_dir.join("cross-device-file.txt");
-        let file2 = dst_dir.join("cross-device-file.txt");
-
-        let _ = fs::remove_file(&file1);
-        let _ = fs::remove_file(&file2);
-
-        fs::write(&file1, "Cross device contents")?;
-
-        let mut fh = FileHandler::new();
-        fh.move_file(&file1, &file2)?;
-
-        assert!(!file1.exists());
-        assert!(file2.is_file());
-        assert_eq!(fs::read(&file2)?, b"Cross device contents");
-
-        fh.undo()?;
-
-        assert!(file1.is_file());
-        assert!(!file2.exists());
-        assert_eq!(fs::read(&file1)?, b"Cross device contents");
-
-        Ok(())
-    }
 }
