@@ -1,5 +1,26 @@
 use crate::{Operation, checksum::get_file_hash, errors::FileError};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+/// Resolves the final destination path for a move operation.
+///
+/// If `to` refers to an existing directory, the file name from `from` is
+/// appended to it and the resulting path is returned. Otherwise, `to` is
+/// treated as the complete destination path and returned unchanged.
+///
+/// This mirrors the behavior of common file move utilities, where moving a
+/// file to a directory preserves its file name, while moving it to a file
+/// path effectively renames it.
+fn resolve_move_destination(from: &Path, to: &Path) -> PathBuf {
+    if !to.is_dir() {
+        return to.to_path_buf();
+    }
+
+    let Some(filename) = from.file_name() else {
+        return to.to_path_buf();
+    };
+
+    to.join(filename)
+}
 
 #[derive(Default)]
 pub struct FileHandler {
@@ -16,12 +37,19 @@ impl FileHandler {
         from: impl AsRef<Path>,
         to: impl AsRef<Path>,
     ) -> Result<(), FileError> {
-        let hash = get_file_hash(&from)?;
+        let from = from.as_ref();
+        let to = to.as_ref();
+
+        let hash = get_file_hash(from)?;
+
+        // Resolve the final move destination. If `to` is an existing directory,
+        // preserve the source file name by moving into that directory; otherwise
+        // treat `to` as the complete destination path (i.e. a rename target).
+        let target = resolve_move_destination(from, to);
 
         let op = Operation::Move {
-            from: from.as_ref().to_path_buf(),
-            to: to.as_ref().to_path_buf(),
-            is_dir: false,
+            from: from.into(),
+            to: target.into_boxed_path(),
             checksum: Some(hash),
         };
 
@@ -89,6 +117,120 @@ mod tests {
         assert!(file1.is_file());
         assert!(!file2.is_file());
         assert_eq!(fs::read(&file1)?, b"File Contents");
+
+        Ok(())
+    }
+
+    #[test]
+    fn move_file_fails_when_source_does_not_exist() -> Result<(), FileError> {
+        let dir = TempDir::new()?;
+
+        let file1 = dir.path().join("missing.txt");
+        let file2 = dir.path().join("file2.txt");
+
+        let mut fh = FileHandler::new();
+        let result = fh.move_file(&file1, &file2);
+
+        assert!(matches!(
+            result,
+            Err(FileError::NotFound(path)) if path == file1
+        ));
+
+        assert!(!file1.exists());
+        assert!(!file2.exists());
+
+        Ok(())
+    }
+
+    #[test]
+    fn move_file_fails_when_file_already_exists() -> Result<(), FileError> {
+        let dir = TempDir::new()?;
+
+        let file1 = dir.path().join("file.txt");
+        fs::write(&file1, "File 1 Contents")?;
+
+        let file2 = dir.path().join("file2.txt");
+        fs::write(&file2, "File 2 Contents")?;
+
+        assert!(file1.is_file());
+        assert!(file2.is_file());
+
+        let mut fh = FileHandler::new();
+        let result = fh.move_file(&file1, &file2);
+
+        assert!(matches!(
+            result.err(),
+            Some(FileError::TargetAlreadyExists(path)) if path == file2
+        ));
+
+        assert!(file1.is_file());
+        assert_eq!(fs::read(&file1)?, b"File 1 Contents");
+
+        assert!(file2.is_file());
+        assert_eq!(fs::read(&file2)?, b"File 2 Contents");
+
+        Ok(())
+    }
+
+    #[test]
+    fn move_file_to_directory_fails_if_file_with_same_name_exists() -> Result<(), FileError> {
+        let dir = TempDir::new()?;
+
+        let file1 = dir.path().join("file.txt");
+        fs::write(&file1, "Original contents")?;
+
+        let target_dir = dir.path().join("target_dir");
+        fs::create_dir(&target_dir)?;
+
+        let existing_target = target_dir.join("file.txt");
+        fs::write(&existing_target, "Existing contents")?;
+
+        let mut fh = FileHandler::new();
+        let result = fh.move_file(&file1, &target_dir);
+
+        match result {
+            Err(FileError::TargetAlreadyExists(path)) => {
+                assert_eq!(path, existing_target);
+            }
+            other => panic!("Expected TargetAlreadyExists, got {:?}", other),
+        }
+
+        assert!(file1.exists());
+        assert!(existing_target.exists());
+        assert_eq!(fs::read(&file1)?, b"Original contents");
+        assert_eq!(fs::read(&existing_target)?, b"Existing contents");
+
+        Ok(())
+    }
+
+    #[test]
+    fn move_file_to_a_folder_path() -> Result<(), FileError> {
+        let dir = TempDir::new()?;
+
+        let file1 = dir.path().join("file.txt");
+        fs::write(&file1, "File 1 Contents")?;
+
+        let new_dir = dir.path().join("new_dir");
+        fs::create_dir(&new_dir)?;
+
+        let new_file = new_dir.join("file.txt");
+
+        assert!(file1.is_file());
+        assert!(new_dir.is_dir());
+        assert!(!new_file.is_file());
+
+        let mut fh = FileHandler::new();
+        fh.move_file(&file1, &new_dir)?;
+
+        assert!(!file1.is_file());
+        assert!(new_file.is_file());
+        assert_eq!(fs::read(&new_file)?, b"File 1 Contents");
+
+        fh.undo()?;
+
+        assert!(file1.is_file());
+        assert!(!new_file.is_file());
+        assert_eq!(fs::read(&file1)?, b"File 1 Contents");
 
         Ok(())
     }
@@ -168,7 +310,33 @@ mod tests {
     }
 
     #[test]
-    fn test_undo_fail_when_file_contents_changed() -> Result<(), FileError> {
+    fn move_fails_when_source_is_directory() -> Result<(), FileError> {
+        let base_dir = TempDir::new()?;
+
+        let folder1 = base_dir.path().join("folder1");
+        fs::create_dir(&folder1)?;
+
+        let folder2 = base_dir.path().join("folder2");
+
+        let mut fh = FileHandler::new();
+        let result = fh.move_file(&folder1, &folder2);
+
+        match result {
+            Err(FileError::ExpectedFileFoundDirectory(path)) => {
+                assert_eq!(path, folder1);
+            }
+
+            other => panic!(
+                "Expected error: ExpectedFileFoundDirectory, got {:?}",
+                other
+            ),
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn undo_fail_when_file_contents_changed() -> Result<(), FileError> {
         let base_dir = TempDir::new()?;
 
         let file1 = base_dir.path().join("file.txt");

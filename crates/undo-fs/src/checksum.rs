@@ -45,10 +45,16 @@ use std::{
 /// ```
 ///
 pub fn get_file_hash(path: impl AsRef<Path>) -> Result<String, FileError> {
-    let mut file = match File::open(&path) {
+    let path = path.as_ref();
+
+    if path.is_dir() {
+        return Err(FileError::ExpectedFileFoundDirectory(path.to_path_buf()));
+    }
+
+    let mut file = match File::open(path) {
         Ok(file) => file,
         Err(err) if err.kind() == io::ErrorKind::NotFound => {
-            return Err(FileError::NotFound(path.as_ref().to_path_buf()));
+            return Err(FileError::NotFound(path.to_path_buf()));
         }
         Err(err) => {
             return Err(FileError::Io(err));
