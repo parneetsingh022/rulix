@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::{fs, path::Path};
+use std::{fs, io, path::Path};
 
 use crate::{checksum::file_checksum_matches, errors::FileError};
 
@@ -21,9 +21,19 @@ fn move_op(from: &Path, to: &Path, checksum: Option<&str>) -> Result<(), FileErr
         return Err(FileError::FileContentsChanged(from.to_path_buf()));
     }
 
-    fs::rename(from, to)?;
+    match fs::rename(from, to) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            // EXDEV error: Invalid cross-device link
+            if e.kind() == io::ErrorKind::CrossesDevices {
+                fs::copy(from, to)?;
+                fs::remove_file(from)?;
+                return Ok(());
+            }
 
-    Ok(())
+            Err(FileError::Io(e))
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
