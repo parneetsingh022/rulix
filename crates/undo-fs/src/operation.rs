@@ -4,6 +4,10 @@ use std::{fs, path::Path};
 use crate::{checksum::file_checksum_matches, errors::FileError};
 
 fn move_op(from: &Path, to: &Path, checksum: Option<&str>) -> Result<(), FileError> {
+    if from.is_dir() {
+        return Err(FileError::ExpectedFileFoundDirectory(from.to_path_buf()));
+    }
+
     if to.exists() {
         return Err(FileError::TargetAlreadyExists(to.to_path_buf()));
     }

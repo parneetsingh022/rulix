@@ -310,7 +310,33 @@ mod tests {
     }
 
     #[test]
-    fn test_undo_fail_when_file_contents_changed() -> Result<(), FileError> {
+    fn move_fails_when_source_is_directory() -> Result<(), FileError> {
+        let base_dir = TempDir::new()?;
+
+        let folder1 = base_dir.path().join("folder1");
+        fs::create_dir(&folder1)?;
+
+        let folder2 = base_dir.path().join("folder2");
+
+        let mut fh = FileHandler::new();
+        let result = fh.move_file(&folder1, &folder2);
+
+        match result {
+            Err(FileError::ExpectedFileFoundDirectory(path)) => {
+                assert_eq!(path, folder1);
+            }
+
+            other => panic!(
+                "Expected error: ExpectedFileFoundDirectory, got {:?}",
+                other
+            ),
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn undo_fail_when_file_contents_changed() -> Result<(), FileError> {
         let base_dir = TempDir::new()?;
 
         let file1 = base_dir.path().join("file.txt");
