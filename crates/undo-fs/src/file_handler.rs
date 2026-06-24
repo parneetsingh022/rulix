@@ -437,6 +437,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires MOVE_TEST_SRC and MOVE_TEST_DST on different filesystems"]
     fn cross_device_move_file_and_undo() -> Result<(), FileError> {
         let Ok(src_dir) = std::env::var("MOVE_TEST_SRC") else {
             eprintln!("Skipping cross-device test: MOVE_TEST_SRC not set");

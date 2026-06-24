@@ -40,7 +40,7 @@ jobs:
 
       - name: Run tests
         run: cargo test --workspace --all-features --verbose
-        
+
   cross-device:
     needs: test
     strategy:
@@ -68,7 +68,7 @@ jobs:
           sudo mkdir -p /mnt/move-dst
           sudo mount -t tmpfs tmpfs /mnt/move-dst
           mkdir -p "$RUNNER_TEMP/move-src"
-          MOVE_TEST_SRC="$RUNNER_TEMP/move-src" MOVE_TEST_DST="/mnt/move-dst" cargo test cross_device_move -- --nocapture
+          MOVE_TEST_SRC="$RUNNER_TEMP/move-src" MOVE_TEST_DST="/mnt/move-dst" cargo test cross_device_move_file_and_undo -- --nocapture
 
       - name: Windows cross-drive move test
         if: runner.os == 'Windows'
@@ -83,4 +83,4 @@ jobs:
           New-Item -ItemType Directory -Force "D:\move-dst"
           $env:MOVE_TEST_SRC = "$env:RUNNER_TEMP\move-src"
           $env:MOVE_TEST_DST = "D:\move-dst"
-          cargo test cross_device_move -- --nocapture
+          cargo test cross_device_move_file_and_undo -- --nocapture
