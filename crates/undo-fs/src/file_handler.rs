@@ -37,16 +37,19 @@ impl FileHandler {
         from: impl AsRef<Path>,
         to: impl AsRef<Path>,
     ) -> Result<(), FileError> {
-        let hash = get_file_hash(&from)?;
+        let from = from.as_ref();
+        let to = to.as_ref();
+
+        let hash = get_file_hash(from)?;
 
         // Resolve the final move destination. If `to` is an existing directory,
         // preserve the source file name by moving into that directory; otherwise
         // treat `to` as the complete destination path (i.e. a rename target).
-        let target = resolve_move_destination(from.as_ref(), to.as_ref());
+        let target = resolve_move_destination(from, to);
 
         let op = Operation::Move {
-            from: from.as_ref().to_path_buf(),
-            to: target,
+            from: from.into(),
+            to: target.into_boxed_path(),
             checksum: Some(hash),
         };
 
