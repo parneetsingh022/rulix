@@ -31,7 +31,6 @@ pub enum Operation {
         // Paths as provided by the caller (may be absolute or relative)
         from: PathBuf,
         to: PathBuf,
-        is_dir: bool,
         checksum: Option<String>,
     },
 }
@@ -56,17 +55,11 @@ impl Operation {
     /// Generates a perfectly inverted operation without any risk of panics.
     pub fn get_undo_operation(&self) -> Self {
         match self {
-            Operation::Move {
-                from,
-                to,
-                is_dir,
-                checksum,
-            } => {
+            Operation::Move { from, to, checksum } => {
                 Operation::Move {
                     // Swapping 'from' and 'to' cleanly reverses the action
                     from: to.clone(),
                     to: from.clone(),
-                    is_dir: *is_dir,
                     checksum: checksum.clone(),
                 }
             }
@@ -83,37 +76,16 @@ mod tests {
         let move_op = Operation::Move {
             from: PathBuf::from("C:\\Users\\Parneet\\Desktop\\report.pdf"),
             to: PathBuf::from("C:\\Users\\Documents\\PDFs\\report.pdf"),
-            is_dir: false,
             checksum: None,
         };
 
         let expected_undo_op = Operation::Move {
             from: PathBuf::from("C:\\Users\\Documents\\PDFs\\report.pdf"),
             to: PathBuf::from("C:\\Users\\Parneet\\Desktop\\report.pdf"),
-            is_dir: false,
             checksum: None,
         };
 
         assert_eq!(move_op.get_undo_operation(), expected_undo_op);
-    }
-
-    #[test]
-    fn move_undo_preserves_directory_flag() {
-        let move_dir_op = Operation::Move {
-            from: PathBuf::from("/etc/source_dir"),
-            to: PathBuf::from("/etc/target_dir"),
-            is_dir: true, // Testing directory variant
-            checksum: None,
-        };
-
-        let expected_undo_op = Operation::Move {
-            from: PathBuf::from("/etc/target_dir"),
-            to: PathBuf::from("/etc/source_dir"),
-            is_dir: true,
-            checksum: None,
-        };
-
-        assert_eq!(move_dir_op.get_undo_operation(), expected_undo_op);
     }
 
     #[test]
@@ -125,14 +97,12 @@ mod tests {
         let move_with_hash = Operation::Move {
             from: PathBuf::from("source.txt"),
             to: PathBuf::from("dest.txt"),
-            is_dir: false,
             checksum: hash_string.clone(),
         };
 
         let expected_undo_op = Operation::Move {
             from: PathBuf::from("dest.txt"),
             to: PathBuf::from("source.txt"),
-            is_dir: false,
             checksum: hash_string,
         };
 
@@ -144,7 +114,6 @@ mod tests {
         let original_op = Operation::Move {
             from: PathBuf::from("relative/path/a.txt"),
             to: PathBuf::from("relative/path/b.txt"),
-            is_dir: false,
             checksum: Some(String::from("hash-123")),
         };
 
@@ -159,14 +128,12 @@ mod tests {
         let edge_case_op = Operation::Move {
             from: PathBuf::from("."),
             to: PathBuf::from(""),
-            is_dir: false,
             checksum: None,
         };
 
         let expected_undo = Operation::Move {
             from: PathBuf::from(""),
             to: PathBuf::from("."),
-            is_dir: false,
             checksum: None,
         };
 

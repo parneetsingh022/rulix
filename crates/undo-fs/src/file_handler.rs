@@ -47,7 +47,6 @@ impl FileHandler {
         let op = Operation::Move {
             from: from.as_ref().to_path_buf(),
             to: target,
-            is_dir: false,
             checksum: Some(hash),
         };
 
