@@ -75,12 +75,15 @@ jobs:
         shell: pwsh
         run: |
           Get-PSDrive -PSProvider FileSystem
-          if (!(Test-Path D:\)) {
-            Write-Host "D:\ not available; skipping cross-drive test"
+
+          if (!(Test-Path C:\) -or !(Test-Path D:\)) {
+            Write-Host "C:\ or D:\ not available; skipping cross-drive test"
             exit 0
           }
-          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\move-src"
+
+          New-Item -ItemType Directory -Force "C:\move-src"
           New-Item -ItemType Directory -Force "D:\move-dst"
-          $env:MOVE_TEST_SRC = "$env:RUNNER_TEMP\move-src"
+
+          $env:MOVE_TEST_SRC = "C:\move-src"
           $env:MOVE_TEST_DST = "D:\move-dst"
           cargo test -p undo-fs cross_device_move_file_and_undo -- --ignored --nocapture
