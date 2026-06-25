@@ -39,7 +39,7 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
-    fn match_returns_not_found_when_target_does_not_exist() {
+    fn match_execute_returns_not_found_when_target_does_not_exist() {
         let temp_dir = tempdir().unwrap();
 
         let missing_path = temp_dir.path().join("does-not-exist");
@@ -59,7 +59,7 @@ mod tests {
     }
 
     #[test]
-    fn match_returns_file_with_extension_containing_leading_dot() {
+    fn match_execute_returns_file_with_extension_containing_leading_dot() {
         let temp_dir = tempdir().unwrap();
         let text_file = temp_dir.path().join("file.txt");
         std::fs::write(&text_file, "hello").unwrap();
@@ -76,7 +76,7 @@ mod tests {
     }
 
     #[test]
-    fn handle_match_adds_only_files_matching_extension() {
+    fn match_execute_adds_only_files_matching_extension() {
         let temp_dir = tempdir().unwrap();
 
         let txt_file = temp_dir.path().join("hello.txt");

@@ -110,6 +110,7 @@ impl Step {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::tempdir;
 
     #[test]
     fn notify_step_executes_successfully() {
@@ -117,5 +118,75 @@ mod tests {
         let mut matched_files = Vec::new();
 
         assert!(step.execute(Path::new("."), &mut matched_files).is_ok());
+    }
+
+    #[test]
+    fn match_step_populates_matched_files() {
+        let temp_dir = tempdir().unwrap();
+
+        let txt_file = temp_dir.path().join("notes.txt");
+        let rs_file = temp_dir.path().join("main.rs");
+
+        std::fs::write(&txt_file, "hello").unwrap();
+        std::fs::write(&rs_file, "fn main() {}").unwrap();
+
+        let step = Step::new_match("txt");
+        let mut matched_files = Vec::new();
+
+        step.execute(temp_dir.path(), &mut matched_files).unwrap();
+
+        assert_eq!(matched_files, vec![txt_file]);
+    }
+
+    #[test]
+    fn match_step_accepts_extension_with_leading_dot() {
+        let temp_dir = tempdir().unwrap();
+
+        let txt_file = temp_dir.path().join("notes.txt");
+        let rs_file = temp_dir.path().join("main.rs");
+
+        std::fs::write(&txt_file, "hello").unwrap();
+        std::fs::write(&rs_file, "fn main() {}").unwrap();
+
+        let step = Step::new_match(".txt");
+        let mut matched_files = Vec::new();
+
+        step.execute(temp_dir.path(), &mut matched_files).unwrap();
+
+        assert_eq!(matched_files, vec![txt_file]);
+    }
+
+    #[test]
+    fn match_step_clears_existing_matched_files_before_matching() {
+        let temp_dir = tempdir().unwrap();
+
+        let txt_file = temp_dir.path().join("notes.txt");
+        let stale_file = temp_dir.path().join("old.txt");
+
+        std::fs::write(&txt_file, "hello").unwrap();
+
+        let step = Step::new_match("txt");
+
+        let mut matched_files = vec![stale_file];
+
+        step.execute(temp_dir.path(), &mut matched_files).unwrap();
+
+        assert_eq!(matched_files, vec![txt_file]);
+    }
+
+    #[test]
+    fn match_step_returns_error_when_target_does_not_exist() {
+        let temp_dir = tempdir().unwrap();
+        let missing_path = temp_dir.path().join("does-not-exist");
+
+        let step = Step::new_match("txt");
+        let mut matched_files = Vec::new();
+
+        let err = step.execute(&missing_path, &mut matched_files).unwrap_err();
+
+        let error_message = err.to_string();
+
+        assert!(error_message.contains("does-not-exist"));
+        assert!(matched_files.is_empty());
     }
 }
