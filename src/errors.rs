@@ -13,6 +13,18 @@ pub enum FileError {
 
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+
+    #[error("expected file found directory: {0}")]
+    NotFile(PathBuf),
+
+    #[error("expected directory found file: {0}")]
+    NotDirectory(PathBuf),
+
+    #[error("path has no file name: {0}")]
+    MissingFileName(PathBuf),
+
+    #[error("file already exists: {0}")]
+    FileAlreadyExist(PathBuf),
 }
 
 #[derive(Debug, Error)]

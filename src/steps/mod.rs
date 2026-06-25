@@ -12,6 +12,7 @@
 //! the runtime execution engine.
 
 mod match_files;
+mod move_to;
 mod notify;
 
 use serde::Deserialize;
@@ -76,7 +77,10 @@ impl Step {
                 Ok(())
             }
 
-            Step::MoveTo { .. } => Err(StepExecutionError::NotImplemented("move_to")),
+            Step::MoveTo { move_to } => {
+                move_to::execute(move_to.as_path(), matched_files)?;
+                Ok(())
+            }
 
             Step::Notify { notify } => notify::execute(notify.as_str()),
         }
