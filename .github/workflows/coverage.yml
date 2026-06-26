@@ -28,12 +28,18 @@ jobs:
 
       - name: Generate coverage report
         run: cargo llvm-cov --workspace --all-targets --all-features --lcov --output-path lcov.info
-        
+
+      - name: Check coverage file
+        run: |
+          ls -lah
+          test -f lcov.info
+          head -n 20 lcov.info
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          slug: parneetsingh022/rulix
-          files: lcov.info
+          files: ./lcov.info
+          disable_search: true
           fail_ci_if_error: true
-          
+          verbose: true
