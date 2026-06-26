@@ -4,6 +4,10 @@ use std::{
     path::{Path, PathBuf},
 };
 
+/// Moves all `matched_files` into `target_dir`
+///
+/// Each path in `matched_files` must point to a file not directory.
+/// `target_dir` must be an existing directory.
 pub fn execute(target_dir: &Path, matched_files: &Vec<PathBuf>) -> Result<(), FileError> {
     for file in matched_files {
         let move_path = resolve_path(file, target_dir)?;
@@ -14,6 +18,14 @@ pub fn execute(target_dir: &Path, matched_files: &Vec<PathBuf>) -> Result<(), Fi
     Ok(())
 }
 
+/// Moves `source_file` to `target_file`
+///
+/// The source path must exist and must be a file. The target path
+/// must not already exist.
+///
+/// This function uses `fs::rename` to move/rename file. If the
+/// source and target are on different filesystem/device it first
+/// copies `source_file` to `target_file` then remove `source_file`.
 fn move_file(source_file: &Path, target_file: &Path) -> Result<(), FileError> {
     ensure_file(source_file)?;
     ensure_file_absent(target_file)?;
@@ -87,7 +99,7 @@ mod tests {
     use tempfile::TempDir;
 
     #[test]
-    fn test_resolve_path_with_right_file_paths() -> Result<(), FileError> {
+    fn resolve_path_with_right_file_paths() -> Result<(), FileError> {
         let dir = TempDir::new()?;
 
         let target_file = dir.path().join("test.txt");
@@ -106,27 +118,29 @@ mod tests {
     }
 
     #[test]
-    fn test_resolve_raises_error_when_file_path_is_dir() -> Result<(), FileError> {
+    fn resolve_raises_error_when_file_path_is_dir() -> Result<(), FileError> {
         let dir = TempDir::new()?;
 
-        let target_file = dir.path().join("folder");
-        fs::create_dir(&target_file)?;
+        let source_file = dir.path().join("folder");
+        fs::create_dir(&source_file)?;
 
         let target_dir = dir.path().join("test_dir");
         fs::create_dir(&target_dir)?;
 
-        let result = resolve_path(&target_file, &target_dir);
+        let result = resolve_path(&source_file, &target_dir);
 
-        assert!(
-            matches!(&result, Err(FileError::NotFile(_))),
-            "Assertion Failed! Expected Err(FileError::IsDirectory), got {result:?}"
-        );
+        let path = match result {
+            Err(FileError::NotFile(path)) => path,
+            _ => panic!("Expected FileError::NotFound got {result:?}"),
+        };
+
+        assert_eq!(path, source_file);
 
         Ok(())
     }
 
     #[test]
-    fn test_resolve_raises_error_when_target_is_existing_file() -> Result<(), FileError> {
+    fn resolve_raises_error_when_target_is_existing_file() -> Result<(), FileError> {
         let dir = TempDir::new()?;
 
         let file = dir.path().join("file1.txt");
@@ -140,48 +154,136 @@ mod tests {
 
         let result = resolve_path(&file, &target_file);
 
-        assert!(
-            matches!(&result, Err(FileError::NotDirectory(_))),
-            "Assertion Failed! Expected Err(FileError::NotDirectory), got {result:?}"
-        );
+        let path = match result {
+            Err(FileError::NotDirectory(path)) => path,
+            _ => panic!("Expected Err(FileError::NotDirectory), got {result:?}"),
+        };
+
+        assert_eq!(path, target_file);
 
         Ok(())
     }
 
     #[test]
-    fn test_resolve_path_raises_error_when_target_dir_does_not_exist() -> Result<(), FileError> {
+    fn resolve_path_raises_error_when_target_dir_does_not_exist() -> Result<(), FileError> {
         let dir = TempDir::new()?;
 
-        let target_file = dir.path().join("test.txt");
-        fs::write(&target_file, "Contents")?;
+        let source_file = dir.path().join("test.txt");
+        fs::write(&source_file, "Contents")?;
 
         let target_dir = dir.path().join("test_dir");
 
-        let result = resolve_path(&target_file, &target_dir);
+        let result = resolve_path(&source_file, &target_dir);
 
-        assert!(
-            matches!(&result, Err(FileError::NotFound(_))),
-            "Assertion Failed! Expected Err(FileError::NotFound), got {result:?}"
-        );
+        let path = match result {
+            Err(FileError::NotFound(path)) => path,
+            _ => panic!("Expected Err(FileError::NotFound, got {result:?})"),
+        };
+
+        assert_eq!(path, target_dir);
 
         Ok(())
     }
 
     #[test]
-    fn test_resolve_path_raises_error_when_source_does_not_exist() -> Result<(), FileError> {
+    fn resolve_path_raises_error_when_source_does_not_exist() -> Result<(), FileError> {
         let dir = TempDir::new()?;
 
-        let target_file = dir.path().join("test.txt");
+        let source_file = dir.path().join("test.txt");
 
         let target_dir = dir.path().join("test_dir");
 
-        let result = resolve_path(&target_file, &target_dir);
+        let result = resolve_path(&source_file, &target_dir);
 
-        assert!(
-            matches!(&result, Err(FileError::NotFound(_))),
-            "Assertion Failed! Expected Err(FileError::NotFound), got {result:?}"
-        );
+        let error_path = match result {
+            Err(FileError::NotFound(path)) => path,
+            _ => panic!("Expected Err(FileError::NotFound), got {result:?}"),
+        };
 
+        assert_eq!(error_path, source_file);
+
+        Ok(())
+    }
+
+    #[test]
+    fn move_file_moves_from_source_to_target() -> Result<(), FileError> {
+        let dir = TempDir::new()?;
+
+        let source = dir.path().join("file1.txt");
+        fs::write(&source, "Source File")?;
+
+        let dest_dir = dir.path().join("dest");
+        fs::create_dir(&dest_dir)?;
+
+        let target = dest_dir.join("target.txt");
+
+        move_file(&source, &target)?;
+        assert!(!source.exists());
+        assert!(target.exists());
+        assert_eq!(fs::read(&target)?, "Source File".as_bytes());
+
+        Ok(())
+    }
+
+    #[test]
+    fn move_file_raises_error_when_source_does_not_exist() -> Result<(), FileError> {
+        let dir = TempDir::new()?;
+
+        let source = dir.path().join("file1.txt");
+
+        let dest_dir = dir.path().join("dest");
+        fs::create_dir(&dest_dir)?;
+
+        let target = dest_dir.join("target.txt");
+
+        let path = match move_file(&source, &target).unwrap_err() {
+            FileError::NotFound(path) => path,
+            e => panic!("Expected FileError::NotFound, got {:?}", e),
+        };
+
+        assert_eq!(path, source);
+
+        Ok(())
+    }
+
+    #[test]
+    fn move_file_raises_error_when_target_already_exist() -> Result<(), FileError> {
+        let dir = TempDir::new()?;
+
+        let source = dir.path().join("file1.txt");
+        fs::write(&source, "File contents")?;
+
+        let dest_dir = dir.path().join("dest");
+        fs::create_dir(&dest_dir)?;
+
+        let target = dest_dir.join("target.txt");
+        fs::write(&target, "target")?;
+
+        let path = match move_file(&source, &target).unwrap_err() {
+            FileError::FileAlreadyExist(file) => file,
+            e => panic!("Expected FileError::FileAlreadyExist, got {:?}", e),
+        };
+
+        assert_eq!(target, path);
+
+        Ok(())
+    }
+
+    #[test]
+    fn move_file_raises_error_when_source_is_dir() -> Result<(), FileError> {
+        let dir = TempDir::new()?;
+
+        let source = dir.path().join("dir1");
+        fs::create_dir(&source)?;
+
+        let dest_file = dir.path().join("test.txt");
+
+        let path = match move_file(&source, &dest_file).unwrap_err() {
+            FileError::NotFile(path) => path,
+            e => panic!("Expected FileError::NotFound, got {:?}", e),
+        };
+
+        assert_eq!(path, source);
         Ok(())
     }
 }

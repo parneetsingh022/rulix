@@ -5,6 +5,15 @@ use std::{
 
 use crate::{errors::FileError, steps::MatchCriteria};
 
+/// Finds file in `target` that match `criteria`.
+///
+/// Clears `matched_files`, than fills it with paths to matching files found
+/// directly inside `target`.
+///
+/// Only regular files are matched. Subdirectories are ignored.
+///
+/// Returns an error if `target` does not exist or if the directory cannot be
+/// read.
 pub fn execute(
     target: &Path,
     criteria: &MatchCriteria,
