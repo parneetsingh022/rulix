@@ -82,8 +82,7 @@ mod tests {
         }};
     }
 
-    #[test]
-    fn run_defaults_to_dry_run() {
+    fn create_test_project() -> TempDir {
         let dir = TempDir::new().unwrap();
 
         let target_dir = dir.path().join("dir1");
@@ -92,17 +91,17 @@ mod tests {
         fs::create_dir(dir.path().join("text")).unwrap();
         fs::create_dir(dir.path().join("json")).unwrap();
 
-        let txt_file1 = create_file!(&target_dir, "txt_file1.txt", "Contents file 1");
-        let txt_file2 = create_file!(&target_dir, "txt_file2.txt", "Contents file 2");
-        let txt_file3 = create_file!(&target_dir, "txt_file3.txt", "Contents file 3");
+        create_file!(&target_dir, "txt_file1.txt", "Contents file 1");
+        create_file!(&target_dir, "txt_file2.txt", "Contents file 2");
+        create_file!(&target_dir, "txt_file3.txt", "Contents file 3");
 
-        let json_file1 = create_file!(&target_dir, "json_file1.json", "{name: \"json 1\"}");
-        let json_file2 = create_file!(&target_dir, "json_file2.json", "{name: \"json 2\"}");
-        let json_file3 = create_file!(&target_dir, "json_file3.json", "{name: \"json 3\"}");
+        create_file!(&target_dir, "json_file1.json", "{name: \"json 1\"}");
+        create_file!(&target_dir, "json_file2.json", "{name: \"json 2\"}");
+        create_file!(&target_dir, "json_file3.json", "{name: \"json 3\"}");
 
-        let rust_file1 = create_file!(&target_dir, "rust_file1.rs", "fn rust1() {}");
-        let rust_file2 = create_file!(&target_dir, "rust_file2.rs", "fn rust2() {}");
-        let rust_file3 = create_file!(&target_dir, "rust_file3.rs", "fn rust3() {}");
+        create_file!(&target_dir, "rust_file1.rs", "fn rust1() {}");
+        create_file!(&target_dir, "rust_file2.rs", "fn rust2() {}");
+        create_file!(&target_dir, "rust_file3.rs", "fn rust3() {}");
 
         create_file!(
             dir.path(),
@@ -122,6 +121,7 @@ rules:
       - match:
           ext: "json"
       - move_to: "json/"
+
   - name: "move-python-files"
     target: "dir1"
     steps:
@@ -130,6 +130,13 @@ rules:
       - move_to: "python/"
 "#
         );
+
+        dir
+    }
+
+    #[test]
+    fn run_defaults_to_dry_run() {
+        let dir = create_test_project();
 
         let output = Command::cargo_bin("rulix")
             .unwrap()
@@ -145,21 +152,57 @@ rules:
 
         insta::assert_snapshot!(output);
 
-        assert!(txt_file1.exists());
-        assert!(txt_file2.exists());
-        assert!(txt_file3.exists());
+        assert!(dir.path().join("dir1/txt_file1.txt").exists());
+        assert!(dir.path().join("dir1/txt_file2.txt").exists());
+        assert!(dir.path().join("dir1/txt_file3.txt").exists());
 
-        assert!(json_file1.exists());
-        assert!(json_file2.exists());
-        assert!(json_file3.exists());
+        assert!(dir.path().join("dir1/json_file1.json").exists());
+        assert!(dir.path().join("dir1/json_file2.json").exists());
+        assert!(dir.path().join("dir1/json_file3.json").exists());
 
-        assert!(rust_file1.exists());
-        assert!(rust_file2.exists());
-        assert!(rust_file3.exists());
+        assert!(dir.path().join("dir1/rust_file1.rs").exists());
+        assert!(dir.path().join("dir1/rust_file2.rs").exists());
+        assert!(dir.path().join("dir1/rust_file3.rs").exists());
 
-        assert!(!dir.path().join("test/txt_file1.txt").exists());
-        assert!(!dir.path().join("test_files/json_file1.json").exists());
+        assert!(!dir.path().join("text/txt_file1.txt").exists());
+        assert!(!dir.path().join("json/json_file1.json").exists());
     }
+
+    #[test]
+    fn run_with_execute_moves_matching_files() {
+        let dir = create_test_project();
+
+        let _ = Command::cargo_bin("rulix")
+            .unwrap()
+            .current_dir(dir.path())
+            .args(["run", "--rules", "rules.yaml", "--execute"])
+            .assert()
+            .success()
+            .get_output()
+            .stdout
+            .clone();
+
+        assert!(!dir.path().join("dir1/txt_file1.txt").exists());
+        assert!(!dir.path().join("dir1/txt_file2.txt").exists());
+        assert!(!dir.path().join("dir1/txt_file3.txt").exists());
+
+        assert!(!dir.path().join("dir1/json_file1.json").exists());
+        assert!(!dir.path().join("dir1/json_file2.json").exists());
+        assert!(!dir.path().join("dir1/json_file3.json").exists());
+
+        assert!(dir.path().join("text/txt_file1.txt").exists());
+        assert!(dir.path().join("text/txt_file2.txt").exists());
+        assert!(dir.path().join("text/txt_file3.txt").exists());
+
+        assert!(dir.path().join("json/json_file1.json").exists());
+        assert!(dir.path().join("json/json_file2.json").exists());
+        assert!(dir.path().join("json/json_file3.json").exists());
+
+        assert!(dir.path().join("dir1/rust_file1.rs").exists());
+        assert!(dir.path().join("dir1/rust_file2.rs").exists());
+        assert!(dir.path().join("dir1/rust_file3.rs").exists());
+    }
+
     #[test]
     fn invalid_file_path_in_target_must_return_path_in_error() {
         let mut cmd = Command::cargo_bin("rulix").unwrap();
