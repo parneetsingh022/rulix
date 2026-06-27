@@ -122,6 +122,12 @@ rules:
       - match:
           ext: "json"
       - move_to: "json/"
+  - name: "move-python-files"
+    target: "dir1"
+    steps:
+      - match:
+          ext: ".py"
+      - move_to: "python/"
 "#
         );
 

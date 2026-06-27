@@ -29,8 +29,9 @@ pub fn dry_run(
         println!(
             "{} {}",
             style("info").blue().bold(),
-            style("No files matched. Nothing to move.").dim()
+            style("No matching files found. Skipping step.").dim()
         );
+        println!();
         return Ok(());
     }
 
