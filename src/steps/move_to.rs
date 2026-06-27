@@ -21,17 +21,10 @@ pub fn execute(target_dir: &Path, matched_files: &Vec<PathBuf>) -> Result<(), Fi
     Ok(())
 }
 
-fn format_path(path: &Path) -> Cow<'_, str> {
-    let path = path.to_string_lossy();
-
-    if path.contains("\\") {
-        return Cow::Owned(path.replace("\\", "/"));
-    }
-
-    path
-}
-
-pub fn dry_run(target_dir: &Path, matched_files: &[PathBuf]) -> Result<(), StepExecutionError> {
+pub fn dry_run(
+    target_dir: &Path,
+    matched_files: &mut Vec<PathBuf>,
+) -> Result<(), StepExecutionError> {
     if matched_files.is_empty() {
         println!(
             "{} {}",
@@ -40,6 +33,8 @@ pub fn dry_run(target_dir: &Path, matched_files: &[PathBuf]) -> Result<(), StepE
         );
         return Ok(());
     }
+
+    matched_files.sort();
 
     for file in matched_files {
         let move_path = resolve_path(file, target_dir)?;
@@ -101,6 +96,16 @@ fn resolve_path(file_path: &Path, folder_path: &Path) -> Result<PathBuf, FileErr
         .ok_or_else(|| FileError::NotFile(file_path.to_path_buf()))?;
 
     Ok(folder_path.join(filename))
+}
+
+fn format_path(path: &Path) -> Cow<'_, str> {
+    let path = path.to_string_lossy();
+
+    if path.contains("\\") {
+        return Cow::Owned(path.replace("\\", "/"));
+    }
+
+    path
 }
 
 fn ensure_file(file_path: &Path) -> Result<(), FileError> {
