@@ -85,6 +85,18 @@ impl Step {
             Step::Notify { notify } => notify::execute(notify.as_str()),
         }
     }
+
+    pub fn dry_run(
+        &self,
+        target: &Path,
+        matched_files: &mut Vec<PathBuf>,
+    ) -> Result<(), StepExecutionError> {
+        match self {
+            // Following steps produce no output when in dry-run.
+            Step::Match { .. } | Step::Notify { .. } => self.execute(target, matched_files),
+            Step::MoveTo { move_to } => move_to::dry_run(move_to.as_path(), matched_files),
+        }
+    }
 }
 
 /// Convenience constructors used by unit tests.

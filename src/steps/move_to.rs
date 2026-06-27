@@ -1,8 +1,11 @@
-use crate::errors::FileError;
+use crate::errors::{FileError, StepExecutionError};
 use std::{
+    borrow::Cow,
     fs, io,
     path::{Path, PathBuf},
 };
+
+use console::style;
 
 /// Moves all `matched_files` into `target_dir`
 ///
@@ -14,6 +17,38 @@ pub fn execute(target_dir: &Path, matched_files: &Vec<PathBuf>) -> Result<(), Fi
 
         move_file(file, &move_path)?;
     }
+
+    Ok(())
+}
+
+pub fn dry_run(
+    target_dir: &Path,
+    matched_files: &mut Vec<PathBuf>,
+) -> Result<(), StepExecutionError> {
+    if matched_files.is_empty() {
+        println!(
+            "{} {}",
+            style("info").blue().bold(),
+            style("No matching files found. Skipping step.").dim()
+        );
+        println!();
+        return Ok(());
+    }
+
+    matched_files.sort();
+
+    for file in matched_files {
+        let move_path = resolve_path(file, target_dir)?;
+
+        println!(
+            "{} from {} to {}",
+            style("MOVE").green(),
+            style(format_path(file)).dim(),
+            style(format_path(&move_path)).dim()
+        );
+    }
+
+    println!();
 
     Ok(())
 }
@@ -64,6 +99,16 @@ fn resolve_path(file_path: &Path, folder_path: &Path) -> Result<PathBuf, FileErr
     Ok(folder_path.join(filename))
 }
 
+fn format_path(path: &Path) -> Cow<'_, str> {
+    let path = path.to_string_lossy();
+
+    if path.contains("\\") {
+        return Cow::Owned(path.replace("\\", "/"));
+    }
+
+    path
+}
+
 fn ensure_file(file_path: &Path) -> Result<(), FileError> {
     if !file_path.exists() {
         return Err(FileError::NotFound(file_path.to_path_buf()));
@@ -97,6 +142,51 @@ mod tests {
     use super::*;
     use std::fs;
     use tempfile::TempDir;
+
+    #[test]
+    fn format_path_returns_path_unchanged_when_it_has_forward_slashes() {
+        let path = Path::new("dir1/file1.txt");
+
+        let formatted = format_path(path);
+
+        assert_eq!(formatted, "dir1/file1.txt");
+    }
+
+    #[test]
+    fn format_path_replaces_backslashes_with_forward_slashes() {
+        let path = Path::new(r"dir1\file1.txt");
+
+        let formatted = format_path(path);
+
+        assert_eq!(formatted, "dir1/file1.txt");
+    }
+
+    #[test]
+    fn format_path_replaces_multiple_backslashes() {
+        let path = Path::new(r"dir1\nested\file1.txt");
+
+        let formatted = format_path(path);
+
+        assert_eq!(formatted, "dir1/nested/file1.txt");
+    }
+
+    #[test]
+    fn format_path_returns_borrowed_when_no_backslashes_exist() {
+        let path = Path::new("dir1/file1.txt");
+
+        let formatted = format_path(path);
+
+        assert!(matches!(formatted, Cow::Borrowed(_)));
+    }
+
+    #[test]
+    fn format_path_returns_owned_when_backslashes_exist() {
+        let path = Path::new(r"dir1\file1.txt");
+
+        let formatted = format_path(path);
+
+        assert!(matches!(formatted, Cow::Owned(_)));
+    }
 
     #[test]
     fn resolve_path_with_right_file_paths() -> Result<(), FileError> {

@@ -11,18 +11,22 @@
 use anyhow::Result;
 use std::path::PathBuf;
 
+use console::style;
+
 use crate::rules::{Rule, RuleSet};
 
 pub struct Runner {
     rule_set: RuleSet,
     matched_files: Vec<PathBuf>,
+    dry_run: bool,
 }
 
 impl Runner {
-    pub fn new(rule_set: RuleSet) -> Self {
+    pub fn new(rule_set: RuleSet, dry_run: bool) -> Self {
         Self {
             rule_set,
             matched_files: Vec::new(),
+            dry_run,
         }
     }
 
@@ -32,20 +36,61 @@ impl Runner {
     pub fn run(&mut self) -> Result<()> {
         let rule_set = &self.rule_set;
         let matched_files = &mut self.matched_files;
+        let dry_run = self.dry_run;
+
+        if dry_run {
+            Self::print_dry_run_header();
+        }
 
         for rule in rule_set {
-            Self::run_steps(rule, matched_files)?;
+            if dry_run {
+                Self::print_dry_run_rule_header(rule);
+            }
+
+            Self::run_steps(rule, matched_files, dry_run)?;
+        }
+
+        if dry_run {
+            Self::print_dry_run_footer();
         }
 
         Ok(())
     }
 
-    fn run_steps(rule: &Rule, matched_files: &mut Vec<PathBuf>) -> Result<()> {
+    fn run_steps(rule: &Rule, matched_files: &mut Vec<PathBuf>, dry_run: bool) -> Result<()> {
         for step in &rule.steps {
-            step.execute(&rule.target, matched_files)?;
+            if dry_run {
+                step.dry_run(&rule.target, matched_files)?;
+            } else {
+                step.execute(&rule.target, matched_files)?;
+            }
         }
 
         Ok(())
+    }
+
+    fn print_dry_run_header() {
+        println!();
+        println!("{}", style("DRY RUN").bold().cyan());
+        println!("{}", style("Preview of planned file system changes").dim());
+    }
+
+    fn print_dry_run_rule_header(rule: &Rule) {
+        println!();
+        println!(
+            "{} {}",
+            style("rule").cyan().bold(),
+            style(&rule.name).bold()
+        );
+        println!("{}", style("─".repeat(rule.name.len() + 5)).dim());
+    }
+
+    fn print_dry_run_footer() {
+        println!(
+            "{} No changes were made. Run again with {} to apply these changes.",
+            style("note").yellow().bold(),
+            style("--execute").cyan().bold()
+        );
     }
 }
 
@@ -96,7 +141,7 @@ mod tests {
             ),
         ]);
 
-        let mut runner = Runner::new(rule_set);
+        let mut runner = Runner::new(rule_set, false);
 
         runner.run().unwrap();
 
@@ -119,7 +164,7 @@ mod tests {
             vec![Step::new_match("txt"), Step::new_match("rs")],
         )]);
 
-        let mut runner = Runner::new(rule_set);
+        let mut runner = Runner::new(rule_set, false);
 
         runner.run().unwrap();
 
@@ -142,7 +187,7 @@ mod tests {
             rule("should-not-run", existing_dir, vec![Step::new_match("txt")]),
         ]);
 
-        let mut runner = Runner::new(rule_set);
+        let mut runner = Runner::new(rule_set, false);
 
         let result = runner.run();
 
