@@ -26,8 +26,15 @@ pub enum Commands {
     /// Display all configured rules.
     List,
 
-    /// Run configured rules.
-    Run,
+    /// Execute Configured rules.
+    ///
+    /// By default, this performs a dry run and previews the file system changes
+    /// that would be made. Use `--execute` to actually make those changes.
+    Run {
+        /// Apply filesystem changes instead of previewing them.
+        #[arg(long)]
+        execute: bool,
+    },
 }
 
 impl Cli {
@@ -57,8 +64,10 @@ impl Cli {
         match &self.command {
             Commands::List => list::run(rules)?,
 
-            Commands::Run => {
-                let mut runner = Runner::new(rules);
+            Commands::Run { execute } => {
+                let dry_run = !execute;
+
+                let mut runner = Runner::new(rules, dry_run);
                 runner.run()?;
             }
         }
