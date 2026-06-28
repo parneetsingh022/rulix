@@ -12,16 +12,14 @@ MOVE from dir1/txt_file1.txt to text/txt_file1.txt
 MOVE from dir1/txt_file2.txt to text/txt_file2.txt
 MOVE from dir1/txt_file3.txt to text/txt_file3.txt
 
-
 rule new-rule
 ─────────────
 MOVE from dir1/json_file1.json to json/json_file1.json
 MOVE from dir1/json_file2.json to json/json_file2.json
 MOVE from dir1/json_file3.json to json/json_file3.json
 
-
 rule move-python-files
 ──────────────────────
-info No matching files found. Skipping step.
+skip No files matched for rule move-python-files
 
-note No changes were made. Run again with --execute to apply these changes.
+note No changes were made. Run again with '--execute' to apply these changes.

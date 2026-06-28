@@ -13,7 +13,32 @@ use console::style;
 /// `target_dir` must be an existing directory.
 pub fn execute(target_dir: &Path, matched_files: &Vec<PathBuf>) -> Result<(), FileError> {
     for file in matched_files {
-        let move_path = resolve_path(file, target_dir)?;
+        let result = resolve_path(file, target_dir);
+
+        let move_path = match result {
+            Ok(path) => path,
+            Err(FileError::FileAlreadyExist(path)) => {
+                println!(
+                    "{} {} {} {} {}",
+                    style("skipped").yellow().bold(),
+                    style("move").dim(),
+                    style(format_path(file.as_path())).dim(),
+                    style("→").dim(),
+                    style(format_path(path.as_path())).dim(),
+                );
+
+                println!(
+                    "  {} {}",
+                    style("reason").dim(),
+                    style("destination already exists").yellow()
+                );
+
+                continue;
+            }
+            Err(err) => {
+                return Err(err);
+            }
+        };
 
         move_file(file, &move_path)?;
     }
@@ -21,36 +46,56 @@ pub fn execute(target_dir: &Path, matched_files: &Vec<PathBuf>) -> Result<(), Fi
     Ok(())
 }
 
-pub fn dry_run(
-    target_dir: &Path,
-    matched_files: &mut Vec<PathBuf>,
-) -> Result<(), StepExecutionError> {
-    if matched_files.is_empty() {
-        println!(
-            "{} {}",
-            style("info").blue().bold(),
-            style("No matching files found. Skipping step.").dim()
-        );
-        println!();
-        return Ok(());
-    }
+enum MoveStatus {
+    Ready,
+    Skipped(&'static str),
+}
 
+pub fn dry_run(target_dir: &Path, matched_files: &mut [PathBuf]) -> Result<(), StepExecutionError> {
     matched_files.sort();
 
-    for file in matched_files {
-        let move_path = resolve_path(file, target_dir)?;
+    for file in matched_files.iter() {
+        let (move_path, status) = match resolve_path(file, target_dir) {
+            Ok(move_path) => (move_path, MoveStatus::Ready),
 
-        println!(
-            "{} from {} to {}",
-            style("MOVE").green(),
-            style(format_path(file)).dim(),
-            style(format_path(&move_path)).dim()
-        );
+            Err(FileError::FileAlreadyExist(path)) => {
+                (path, MoveStatus::Skipped("destination exists"))
+            }
+
+            Err(err) => return Err(err.into()),
+        };
+
+        print_move_preview(file, &move_path, status);
     }
 
-    println!();
+    if !matched_files.is_empty() {
+        println!()
+    };
 
     Ok(())
+}
+
+fn print_move_preview(from: &Path, to: &Path, status: MoveStatus) {
+    match status {
+        MoveStatus::Ready => {
+            println!(
+                "{} from {} to {}",
+                style("MOVE").green(),
+                style(format_path(from)).dim(),
+                style(format_path(to)).dim()
+            );
+        }
+
+        MoveStatus::Skipped(reason) => {
+            println!(
+                "{} from {} to {} {}",
+                style("MOVE").yellow(),
+                style(format_path(from)).dim(),
+                style(format_path(to)).dim(),
+                style(format!("[skipped: {reason}]")).yellow().bold()
+            );
+        }
+    }
 }
 
 /// Moves `source_file` to `target_file`
@@ -96,7 +141,13 @@ fn resolve_path(file_path: &Path, folder_path: &Path) -> Result<PathBuf, FileErr
         .file_name()
         .ok_or_else(|| FileError::NotFile(file_path.to_path_buf()))?;
 
-    Ok(folder_path.join(filename))
+    let final_path = folder_path.join(filename);
+
+    if final_path.exists() {
+        return Err(FileError::FileAlreadyExist(final_path));
+    }
+
+    Ok(final_path)
 }
 
 fn format_path(path: &Path) -> Cow<'_, str> {

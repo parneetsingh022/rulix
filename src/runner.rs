@@ -48,6 +48,10 @@ impl Runner {
             }
 
             Self::run_steps(rule, matched_files, dry_run)?;
+
+            if dry_run && matched_files.is_empty() {
+                Self::print_dry_run_step_skipped_no_matches(rule)
+            }
         }
 
         if dry_run {
@@ -73,10 +77,10 @@ impl Runner {
         println!();
         println!("{}", style("DRY RUN").bold().cyan());
         println!("{}", style("Preview of planned file system changes").dim());
+        println!();
     }
 
     fn print_dry_run_rule_header(rule: &Rule) {
-        println!();
         println!(
             "{} {}",
             style("rule").cyan().bold(),
@@ -85,11 +89,21 @@ impl Runner {
         println!("{}", style("─".repeat(rule.name.len() + 5)).dim());
     }
 
+    fn print_dry_run_step_skipped_no_matches(rule: &Rule) {
+        println!(
+            "{} {} {}",
+            style("skip").yellow().bold(),
+            style("No files matched for rule").dim(),
+            style(&rule.name).bold()
+        );
+        println!();
+    }
+
     fn print_dry_run_footer() {
         println!(
             "{} No changes were made. Run again with {} to apply these changes.",
             style("note").yellow().bold(),
-            style("--execute").cyan().bold()
+            style("'--execute'").cyan().bold()
         );
     }
 }
